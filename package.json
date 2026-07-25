@@ -1,0 +1,22 @@
+{
+  "name": "comeback-ai",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "start": "concurrently -n server,client -c blue,green \"npm start --prefix server\" \"npm start --prefix client\"",
+    "unified": "npm run unified --prefix client",
+    "unified:build": "npm run build:backend --prefix server && NEXT_PUBLIC_API_URL= NEXT_PUBLIC_SOCKET_URL= npm run build --prefix client && npm run unified:start --prefix client",
+    "desktop": "npm run desktop --prefix client",
+    "mobile:build": "npm run mobile:build --prefix client",
+    "install:all": "npm install --prefix server && npm install --prefix client",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset",
+    "supabase:status": "supabase status"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

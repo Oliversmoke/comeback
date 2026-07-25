@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="520" viewBox="0 0 520 520">
+  <defs>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00A8FF"/>
+      <stop offset="1" stop-color="#0066FF"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF2055"/>
+      <stop offset="1" stop-color="#FF6A00"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="520" height="520" fill="none"/>
+  <g filter="url(#glow)" fill="none" stroke-width="14" stroke-linecap="round">
+    <circle cx="260" cy="260" r="150" stroke="url(#cyan)" opacity="0.9"/>
+    <path d="M 110 260 A 150 150 0 0 1 260 110" stroke="url(#pink)" stroke-width="20"/>
+    <path d="M 260 110 l -26 26 M 260 110 l 26 26" stroke="url(#pink)" stroke-width="14"/>
+    <circle cx="410" cy="260" r="16" fill="url(#pink)" stroke="none"/>
+  </g>
+  <text x="260" y="470" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700" fill="#EAF6FF" letter-spacing="2">comeback.ai</text>
+</svg>
