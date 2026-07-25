@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: qdrant
+  namespace: rickchat
+spec:
+  serviceName: qdrant
+  replicas: 2
+  selector:
+    matchLabels:
+      service: qdrant
+  template:
+    metadata:
+      labels:
+        service: qdrant
+    spec:
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant
+          ports:
+            - containerPort: 6333
+            - containerPort: 6334
+          volumeMounts:
+            - name: qdrantdata
+              mountPath: /qdrant/storage
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+  volumeClaimTemplates:
+    - metadata:
+        name: qdrantdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qdrant
+  namespace: rickchat
+spec:
+  selector:
+    service: qdrant
+  ports:
+    - name: grpc
+      port: 6333
+      targetPort: 6333
+    - name: http
+      port: 6334
+      targetPort: 6334
