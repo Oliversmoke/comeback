@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+.git/
+*.env
+*.log
+coverage/
+.turbo/
+load-testing/
+docs/
+iac/
+client/
+server/

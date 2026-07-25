@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: rickchat
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      service: postgres
+  template:
+    metadata:
+      labels:
+        service: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: pgvector/pgvector:pg17
+          env:
+            - name: POSTGRES_DB
+              value: rickchat
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rickchat-secrets
+                  key: database-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rickchat-secrets
+                  key: database-password
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: rickchat
+spec:
+  selector:
+    service: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
