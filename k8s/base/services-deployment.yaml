@@ -1,0 +1,764 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: auth-service
+  template:
+    metadata:
+      labels:
+        service: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: gcr.io/rickchat/auth-service:latest
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: rickchat
+spec:
+  selector:
+    service: auth-service
+  ports:
+    - port: 80
+      targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: user-service
+  template:
+    metadata:
+      labels:
+        service: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: gcr.io/rickchat/user-service:latest
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: rickchat
+spec:
+  selector:
+    service: user-service
+  ports:
+    - port: 80
+      targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: chat-service
+  template:
+    metadata:
+      labels:
+        service: chat-service
+    spec:
+      containers:
+        - name: chat-service
+          image: gcr.io/rickchat/chat-service:latest
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+  namespace: rickchat
+spec:
+  selector:
+    service: chat-service
+  ports:
+    - port: 80
+      targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-gateway
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: ai-gateway
+  template:
+    metadata:
+      labels:
+        service: ai-gateway
+    spec:
+      containers:
+        - name: ai-gateway
+          image: gcr.io/rickchat/ai-gateway:latest
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-gateway
+  namespace: rickchat
+spec:
+  selector:
+    service: ai-gateway
+  ports:
+    - port: 80
+      targetPort: 8084
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memory-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: memory-service
+  template:
+    metadata:
+      labels:
+        service: memory-service
+    spec:
+      containers:
+        - name: memory-service
+          image: gcr.io/rickchat/memory-service:latest
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: memory-service
+  namespace: rickchat
+spec:
+  selector:
+    service: memory-service
+  ports:
+    - port: 80
+      targetPort: 8085
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketplace-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: marketplace-service
+  template:
+    metadata:
+      labels:
+        service: marketplace-service
+    spec:
+      containers:
+        - name: marketplace-service
+          image: gcr.io/rickchat/marketplace-service:latest
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketplace-service
+  namespace: rickchat
+spec:
+  selector:
+    service: marketplace-service
+  ports:
+    - port: 80
+      targetPort: 8086
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: learning-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: learning-service
+  template:
+    metadata:
+      labels:
+        service: learning-service
+    spec:
+      containers:
+        - name: learning-service
+          image: gcr.io/rickchat/learning-service:latest
+          ports:
+            - containerPort: 8087
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: learning-service
+  namespace: rickchat
+spec:
+  selector:
+    service: learning-service
+  ports:
+    - port: 80
+      targetPort: 8087
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: translation-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: translation-service
+  template:
+    metadata:
+      labels:
+        service: translation-service
+    spec:
+      containers:
+        - name: translation-service
+          image: gcr.io/rickchat/translation-service:latest
+          ports:
+            - containerPort: 8088
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: translation-service
+  namespace: rickchat
+spec:
+  selector:
+    service: translation-service
+  ports:
+    - port: 80
+      targetPort: 8088
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accessibility-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: accessibility-service
+  template:
+    metadata:
+      labels:
+        service: accessibility-service
+    spec:
+      containers:
+        - name: accessibility-service
+          image: gcr.io/rickchat/accessibility-service:latest
+          ports:
+            - containerPort: 8089
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: accessibility-service
+  namespace: rickchat
+spec:
+  selector:
+    service: accessibility-service
+  ports:
+    - port: 80
+      targetPort: 8089
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camera-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: camera-service
+  template:
+    metadata:
+      labels:
+        service: camera-service
+    spec:
+      containers:
+        - name: camera-service
+          image: gcr.io/rickchat/camera-service:latest
+          ports:
+            - containerPort: 8090
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: camera-service
+  namespace: rickchat
+spec:
+  selector:
+    service: camera-service
+  ports:
+    - port: 80
+      targetPort: 8090
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: voice-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: voice-service
+  template:
+    metadata:
+      labels:
+        service: voice-service
+    spec:
+      containers:
+        - name: voice-service
+          image: gcr.io/rickchat/voice-service:latest
+          ports:
+            - containerPort: 8091
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: voice-service
+  namespace: rickchat
+spec:
+  selector:
+    service: voice-service
+  ports:
+    - port: 80
+      targetPort: 8091
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: notification-service
+  template:
+    metadata:
+      labels:
+        service: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: gcr.io/rickchat/notification-service:latest
+          ports:
+            - containerPort: 8092
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: rickchat
+spec:
+  selector:
+    service: notification-service
+  ports:
+    - port: 80
+      targetPort: 8092
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: payment-service
+  template:
+    metadata:
+      labels:
+        service: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: gcr.io/rickchat/payment-service:latest
+          ports:
+            - containerPort: 8093
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-service
+  namespace: rickchat
+spec:
+  selector:
+    service: payment-service
+  ports:
+    - port: 80
+      targetPort: 8093
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: subscription-service
+  template:
+    metadata:
+      labels:
+        service: subscription-service
+    spec:
+      containers:
+        - name: subscription-service
+          image: gcr.io/rickchat/subscription-service:latest
+          ports:
+            - containerPort: 8094
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: subscription-service
+  namespace: rickchat
+spec:
+  selector:
+    service: subscription-service
+  ports:
+    - port: 80
+      targetPort: 8094
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: file-service
+  template:
+    metadata:
+      labels:
+        service: file-service
+    spec:
+      containers:
+        - name: file-service
+          image: gcr.io/rickchat/file-service:latest
+          ports:
+            - containerPort: 8095
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: file-service
+  namespace: rickchat
+spec:
+  selector:
+    service: file-service
+  ports:
+    - port: 80
+      targetPort: 8095
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: analytics-service
+  template:
+    metadata:
+      labels:
+        service: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: gcr.io/rickchat/analytics-service:latest
+          ports:
+            - containerPort: 8096
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service
+  namespace: rickchat
+spec:
+  selector:
+    service: analytics-service
+  ports:
+    - port: 80
+      targetPort: 8096
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: rickchat
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      service: admin-service
+  template:
+    metadata:
+      labels:
+        service: admin-service
+    spec:
+      containers:
+        - name: admin-service
+          image: gcr.io/rickchat/admin-service:latest
+          ports:
+            - containerPort: 8097
+          envFrom:
+            - configMapRef:
+                name: rickchat-config
+            - secretRef:
+                name: rickchat-secrets
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+  namespace: rickchat
+spec:
+  selector:
+    service: admin-service
+  ports:
+    - port: 80
+      targetPort: 8097

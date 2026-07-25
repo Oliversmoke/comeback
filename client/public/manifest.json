@@ -1,0 +1,17 @@
+{
+  "name": "comeback.AI - Social Productivity",
+  "short_name": "comeback.AI",
+  "description": "Achieve your goals with AI-powered coaching and social accountability",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "categories": ["productivity", "social", "lifestyle"],
+  "lang": "en-US",
+  "dir": "ltr"
+}
