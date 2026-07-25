@@ -1,0 +1,274 @@
+version: "3.9"
+
+x-common: &common
+  environment: &common-env
+    ENVIRONMENT: development
+    DEBUG: "true"
+    DATABASE_URL: jdbc:postgresql://postgres:5432/rickchat
+    DATABASE_USER: rickchat
+    DATABASE_PASSWORD: rickchat
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    QDRANT_HOST: qdrant
+    QDRANT_PORT: 6333
+    JWT_SECRET: dev-jwt-secret-key-change-in-production
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    FIREBASE_PROJECT_ID: rickchat-dev
+    GOOGLE_CLOUD_PROJECT: rickchat-dev
+    STORAGE_BUCKET: rickchat-files-dev
+    QUEUE_TYPE: in_memory
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_started
+  networks:
+    - rickchat-net
+
+services:
+  # Core Infrastructure
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: rickchat
+      POSTGRES_USER: rickchat
+      POSTGRES_PASSWORD: rickchat
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rickchat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rickchat-net
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+    networks:
+      - rickchat-net
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrantdata:/qdrant/storage
+    networks:
+      - rickchat-net
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    <<: *common
+
+  # Microservices
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: auth-service
+        PORT: 8081
+    ports:
+      - "8081:8081"
+    <<: *common
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: user-service
+        PORT: 8082
+    ports:
+      - "8082:8082"
+    <<: *common
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: chat-service
+        PORT: 8083
+    ports:
+      - "8083:8083"
+    <<: *common
+
+  ai-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: ai-gateway
+        PORT: 8084
+    ports:
+      - "8084:8084"
+    <<: *common
+
+  memory-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: memory-service
+        PORT: 8085
+    ports:
+      - "8085:8085"
+    <<: *common
+
+  marketplace-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: marketplace-service
+        PORT: 8086
+    ports:
+      - "8086:8086"
+    <<: *common
+
+  learning-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: learning-service
+        PORT: 8087
+    ports:
+      - "8087:8087"
+    <<: *common
+
+  translation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: translation-service
+        PORT: 8088
+    ports:
+      - "8088:8088"
+    <<: *common
+
+  accessibility-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: accessibility-service
+        PORT: 8089
+    ports:
+      - "8089:8089"
+    <<: *common
+
+  camera-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: camera-service
+        PORT: 8090
+    ports:
+      - "8090:8090"
+    <<: *common
+
+  voice-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: voice-service
+        PORT: 8091
+    ports:
+      - "8091:8091"
+    <<: *common
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: notification-service
+        PORT: 8092
+    ports:
+      - "8092:8092"
+    <<: *common
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: payment-service
+        PORT: 8093
+    ports:
+      - "8093:8093"
+    <<: *common
+
+  subscription-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: subscription-service
+        PORT: 8094
+    ports:
+      - "8094:8094"
+    <<: *common
+
+  file-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: file-service
+        PORT: 8095
+    ports:
+      - "8095:8095"
+    <<: *common
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: analytics-service
+        PORT: 8096
+    ports:
+      - "8096:8096"
+    <<: *common
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.service
+      args:
+        SERVICE: admin-service
+        PORT: 8097
+    ports:
+      - "8097:8097"
+    <<: *common
+
+volumes:
+  pgdata:
+  redisdata:
+  qdrantdata:
+
+networks:
+  rickchat-net:
+    driver: bridge

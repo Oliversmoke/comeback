@@ -1,0 +1,137 @@
+[versions]
+kotlin = "2.1.0"
+ktor = "3.1.0"
+koin = "4.0.2"
+exposed = "0.59.0"
+postgresql = "42.7.5"
+hikari = "6.2.1"
+flyway = "11.3.4"
+jedis = "5.4.2"
+qdrant = "1.13.0"
+firebase-admin = "9.4.3"
+google-cloud-storage = "2.49.0"
+google-cloud-logging = "3.22.4"
+google-cloud-secretmanager = "2.60.0"
+google-cloud-pubsub = "1.137.0"
+google-cloud-firestore = "3.32.0"
+jackson = "2.18.3"
+kotlinx-serialization = "1.7.3"
+kotlinx-coroutines = "1.9.0"
+logback = "1.5.18"
+prometheus = "0.16.0"
+opentelemetry = "1.47.0"
+strikt = "0.34.1"
+kafka = "3.9.0"
+s3 = "2.30.22"
+bcrypt = "0.10.2"
+uuid = "0.8.4"
+testcontainers = "1.20.6"
+mockk = "1.13.14"
+junit = "5.12.0"
+graphql-kickstart = "15.1.0"
+hocon = "0.3.0"
+
+[libraries]
+# Kotlin
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "kotlinx-coroutines" }
+
+# Ktor
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-server-csrf = { module = "io.ktor:ktor-server-csrf", version.ref = "ktor" }
+ktor-server-rate-limit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-compression = { module = "io.ktor:ktor-server-compression", version.ref = "ktor" }
+ktor-server-hsts = { module = "io.ktor:ktor-server-hsts", version.ref = "ktor" }
+ktor-server-forwarded-header = { module = "io.ktor:ktor-server-forwarded-header", version.ref = "ktor" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-server-openapi = { module = "io.ktor:ktor-server-openapi", version.ref = "ktor" }
+ktor-server-graphql = { module = "io.ktor:ktor-server-graphql", version.ref = "ktor" }
+
+# Koin
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+koin-logger = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin" }
+
+# Database
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-migration = { module = "org.jetbrains.exposed:exposed-migration", version.ref = "exposed" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# Redis
+jedis = { module = "redis.clients:jedis", version.ref = "jedis" }
+
+# Vector DB
+qdrant-client = { module = "io.qdrant:client", version.ref = "qdrant" }
+
+# Firebase
+firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebase-admin" }
+
+# Google Cloud
+google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version.ref = "google-cloud-storage" }
+google-cloud-logging = { module = "com.google.cloud:google-cloud-logging", version.ref = "google-cloud-logging" }
+google-cloud-secretmanager = { module = "com.google.cloud:google-cloud-secretmanager", version.ref = "google-cloud-secretmanager" }
+google-cloud-pubsub = { module = "com.google.cloud:google-cloud-pubsub", version.ref = "google-cloud-pubsub" }
+google-cloud-firestore = { module = "com.google.cloud:google-cloud-firestore", version.ref = "google-cloud-firestore" }
+
+# Serialization
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+
+# Logging
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+# Monitoring
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-register-prometheus", version.ref = "prometheus" }
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
+
+# Security
+bcrypt = { module = "at.favre.lib:bcrypt", version.ref = "bcrypt" }
+
+# UUID
+uuid-generator = { module = "com.benasher44:uuid", version.ref = "uuid" }
+
+# Config
+hocon = { module = "com.typesafe:config", version.ref = "hocon" }
+
+# Testing
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+testcontainers-bom = { module = "org.testcontainers:testcontainers-bom", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ktor-plugin = { id = "io.ktor.plugin", version.ref = "ktor" }
+shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }

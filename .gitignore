@@ -1,0 +1,24 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+.turbo/
+
+# Capacitor / Mobile
+client/ios/
+client/android/
+client/capacitor-cordova-android-plugins/
+client/cordova-plugins/
+
+# Legacy Gradle project (old RickChat)
+.gradle/
+
+# Misc
+joke-generator.js
+*.tsbuildinfo
