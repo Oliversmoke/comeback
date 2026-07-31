@@ -7,10 +7,7 @@ import rateLimit from 'express-rate-limit';
 import passport from 'passport';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config();
 
 import connectDB from './config/database.js';
 import configurePassport from './config/passport.js';
@@ -24,14 +21,7 @@ import groupRoutes from './routes/groups.js';
 import taskRoutes from './routes/tasks.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import aiRoutes from './routes/ai.js';
-import conversationRoutes from './routes/conversations.js';
 import backupRoutes from './routes/backup.js';
-import uploadRoutes from './routes/upload.js';
-import memoryRoutes from './routes/memory.js';
-import analyticsRoutes from './routes/analytics.js';
-import achievementRoutes from './routes/achievements.js';
-import brandingRoutes from './routes/branding.js';
-import psychologyRoutes from './routes/psychology.js';
 import { startBackupSchedule } from './services/backupService.js';
 
 const app = express();
@@ -43,18 +33,10 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
-  /\.trycloudflare\.com$/,
-  /\.ngrok-free\.dev$/,
-  /\.ngrok\.io$/,
 ].filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true);
-    const match = allowedOrigins.some((o) =>
-      typeof o === 'string' ? o === origin : o.test(origin)
-    );
-    if (match) return cb(null, true);
-    console.warn(`CORS blocked origin: ${origin}`);
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -112,14 +94,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/conversations', conversationRoutes);
 app.use('/api/backup', backupRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/memory', memoryRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/achievements', achievementRoutes);
-app.use('/api/branding', brandingRoutes);
-app.use('/api/psychology', psychologyRoutes);
 
 // 404 handler
 app.use((req, res) => {

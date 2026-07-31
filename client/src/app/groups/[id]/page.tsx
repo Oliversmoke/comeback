@@ -47,13 +47,8 @@ export default function GroupDetailPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="skeleton h-10 w-32 rounded-xl" />
-        <div className="skeleton h-48 rounded-2xl mb-6" />
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="skeleton h-64 rounded-2xl" />
-          <div className="skeleton h-64 rounded-2xl" />
-        </div>
+      <div className="flex justify-center py-20">
+        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -65,14 +60,12 @@ export default function GroupDetailPage() {
   return (
     <AnimatedPage>
       <FadeIn>
-        <motion.button
+        <button
           onClick={() => router.push('/groups')}
           className="flex items-center gap-2 text-dark-400 hover:text-dark-200 mb-4 transition-colors"
-          whileHover={{ x: -3 }}
-          whileTap={{ scale: 0.97 }}
         >
           <ArrowLeft className="w-4 h-4" /> Back to Groups
-        </motion.button>
+        </button>
       </FadeIn>
 
       <FadeIn>
@@ -94,14 +87,7 @@ export default function GroupDetailPage() {
                 </div>
               </div>
             </div>
-            <motion.button
-              onClick={handleLeave}
-              className="btn-secondary text-sm"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Leave Group
-            </motion.button>
+            <button onClick={handleLeave} className="btn-secondary text-sm">Leave Group</button>
           </div>
 
           {group.description && (
@@ -142,11 +128,7 @@ export default function GroupDetailPage() {
                 const userData = typeof member.user === 'object' ? member.user : null;
                 return (
                   <StaggerItem key={member.user.toString()}>
-                    <motion.div
-                      layout
-                      whileHover={{ x: 3 }}
-                      className="flex items-center justify-between p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-colors"
-                    >
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-dark-800/50 hover:bg-dark-800 transition-colors">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-xs font-bold text-white">
                           {userData?.displayName?.charAt(0) || '?'}
@@ -164,7 +146,7 @@ export default function GroupDetailPage() {
                         <p className="text-xs text-dark-400">{member.xpInGroup} XP</p>
                         <p className="text-xs text-dark-500">{formatTimeAgo(member.joinedAt)}</p>
                       </div>
-                    </motion.div>
+                    </div>
                   </StaggerItem>
                 );
               })}

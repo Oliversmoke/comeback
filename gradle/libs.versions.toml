@@ -18,7 +18,7 @@ jackson = "2.18.3"
 kotlinx-serialization = "1.7.3"
 kotlinx-coroutines = "1.9.0"
 logback = "1.5.18"
-micrometer = "1.14.5"
+prometheus = "0.16.0"
 opentelemetry = "1.47.0"
 strikt = "0.34.1"
 kafka = "3.9.0"
@@ -104,7 +104,7 @@ jackson-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-y
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 # Monitoring
-micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-register-prometheus", version.ref = "prometheus" }
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
 opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
@@ -133,5 +133,5 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor-plugin = { id = "io.ktor.plugin", version.ref = "ktor" }
-shadow = { id = "com.gradleup.shadow", version = "8.3.6" }
+shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }

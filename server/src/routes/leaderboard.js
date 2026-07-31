@@ -19,19 +19,15 @@ router.get('/groups', catchAsync(async (req, res) => {
 }));
 
 router.get('/user-rank', authenticate, catchAsync(async (req, res) => {
-  const user = await User.findById(req.user.id).select('xp');
+  const user = await User.findById(req.user.id);
   if (!user) return res.json({ success: true, data: { rank: null, totalUsers: 0 } });
 
-  const [result] = await User.aggregate([
-    { $group: { _id: null, total: { $sum: 1 }, above: { $sum: { $cond: [{ $gt: ['$xp', user.xp] }, 1, 0] } } } },
-  ]);
+  const rank = await User.countDocuments({ xp: { $gt: user.xp } }) + 1;
+  const totalUsers = await User.countDocuments();
 
-  if (!result) return res.json({ success: true, data: { rank: null, totalUsers: 0 } });
-
-  const rank = result.above + 1;
   res.json({
     success: true,
-    data: { rank, totalUsers: result.total, percentile: Math.round(((result.total - rank) / result.total) * 100) },
+    data: { rank, totalUsers, percentile: Math.round(((totalUsers - rank) / totalUsers) * 100) },
   });
 }));
 
