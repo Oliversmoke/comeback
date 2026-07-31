@@ -7,9 +7,9 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN apk add --no-cache curl tzdata
 COPY --from=builder /app/api-gateway/build/libs/api-gateway-*.jar /app/api-gateway.jar
-RUN addgroup -S rickchat && adduser -S rickchat -G rickchat \
-  && mkdir -p /app/logs && chown -R rickchat:rickchat /app
-USER rickchat
+RUN addgroup -S comeback && adduser -S comeback -G comeback \
+  && mkdir -p /app/logs && chown -R comeback:comeback /app
+USER comeback
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
   CMD curl -f "http://localhost:${PORT:-8080}/health" || exit 1

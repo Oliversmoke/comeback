@@ -9,7 +9,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const serverUrl = process.env.CAPACITOR_SERVER_URL;
 
 const config: CapacitorConfig = {
-  appId: 'ai.rickchat.app',
+  appId: 'ai.comeback.app',
   appName: 'comeback.AI',
   webDir: 'out',
   server: serverUrl
