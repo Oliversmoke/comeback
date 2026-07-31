@@ -71,13 +71,24 @@ class GeminiProvider {
     const lastMsg = chatMessages[chatMessages.length - 1];
     if (!lastMsg) return '';
 
-    const chat = this.model.startChat({
-      history,
-      systemInstruction: systemMsg?.content,
+    const config = {
       generationConfig: {
         maxOutputTokens: options.maxTokens || 500,
         temperature: options.temperature ?? 0.7,
       },
+    };
+
+    if (systemMsg?.content) {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      config.systemInstruction = {
+        role: 'system',
+        parts: [{ text: systemMsg.content }],
+      };
+    }
+
+    const chat = this.model.startChat({
+      history,
+      ...config,
     });
 
     const result = await chat.sendMessage(lastMsg.content);

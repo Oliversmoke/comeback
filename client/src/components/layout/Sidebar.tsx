@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { cn, calculateXpProgress } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/ui/ThemeToggle';
+import { useBranding } from '@/hooks/useBranding';
 
 interface NavItem {
   href: string;
@@ -24,20 +25,25 @@ const navItems: NavItem[] = [
   { href: '/groups', label: 'Groups', icon: Users },
   { href: '/chat', label: 'Chat', icon: MessageSquare },
   { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { href: '/ai-coach', label: 'AI Coach', icon: Bot, badge: 'Owner' },
+  { href: '/ai-coach', label: 'AI Coach', icon: Bot },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
+  const { logoUrl, hasCustomLogo } = useBranding();
   const xpProgress = calculateXpProgress(user?.xp || 0);
 
   return (
     <aside className="hidden lg:flex flex-col w-72 h-screen bg-dark-800/50 border-r border-dark-700/50 backdrop-blur-xl">
       <div className="p-6 border-b border-dark-700/50">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-            <Target className="w-5 h-5 text-white" />
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-lg shadow-primary-500/20 group-hover:shadow-primary-500/30 transition-shadow overflow-hidden">
+            {hasCustomLogo ? (
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <Target className="w-5 h-5 text-white" />
+            )}
           </div>
           <span className="text-xl font-bold gradient-text">comeback.AI</span>
         </Link>
@@ -53,7 +59,7 @@ export default function Sidebar() {
                 whileHover={{ x: 4 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+                  'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 relative',
                   isActive
                     ? 'bg-primary-500/10 text-primary-400 border border-primary-500/20'
                     : 'text-dark-300 hover:text-dark-100 hover:bg-dark-700/50'
@@ -67,10 +73,13 @@ export default function Sidebar() {
                   </span>
                 )}
                 {isActive && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-400"
-                  />
+                  <>
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-primary-400"
+                    />
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary-500/5 to-transparent pointer-events-none" />
+                  </>
                 )}
               </motion.div>
             </Link>
@@ -95,14 +104,16 @@ export default function Sidebar() {
           <span className="text-sm">Logout</span>
         </button>
 
-        <div className="glass-card p-4">
+        <div className="glass-card-hover p-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 p-0.5">
-              <img
-                src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username}&background=6366f1&color=fff`}
-                alt=""
-                className="w-full h-full rounded-full bg-dark-800"
-              />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 p-0.5 flex-shrink-0">
+              <div className="w-full h-full rounded-full bg-dark-800 overflow-hidden">
+                <img
+                  src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username}&background=00A8FF&color=fff`}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-dark-100 truncate">{user?.displayName || user?.username}</p>
@@ -124,7 +135,10 @@ export default function Sidebar() {
             </div>
           </div>
           <div className="flex items-center gap-2 mt-3 text-xs text-dark-400">
-            <span>🔥 {user?.streak || 0} day streak</span>
+            <span className="inline-flex items-center gap-1">
+              <span className="text-orange-400">🔥</span>
+              <span>{user?.streak || 0} day streak</span>
+            </span>
           </div>
         </div>
       </div>

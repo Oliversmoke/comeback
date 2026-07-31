@@ -178,3 +178,112 @@ export interface PaginatedResponse<T> {
     pages: number;
   };
 }
+
+export interface UserMemory {
+  _id: string;
+  user: string;
+  coachingStyle: {
+    preferredTone: 'encouraging' | 'direct' | 'analytical' | 'warm' | 'minimalist';
+    challengePreference: 'stretch' | 'moderate' | 'gentle';
+    reflectionFrequency: 'daily' | 'weekly' | 'never';
+    feedbackStyle: 'detailed' | 'concise' | 'actionable';
+  };
+  personalityProfile: {
+    primaryMotivation: string;
+    productivityPattern: string;
+    consistencyScore: number;
+    burnoutRisk: number;
+    learningStyle: string;
+  };
+  behavioralPatterns: {
+    bestTaskTimes: string[];
+    worstTaskTimes: string[];
+    highEnergyCategories: string[];
+    lowEnergyCategories: string[];
+    averageCompletionRate: number;
+    averageStreakBeforeReset: number;
+    peakProductivityHours: number[];
+    commonlyDiscussedTopics: Array<{
+      topic: string;
+      mentionCount: number;
+      lastMentioned: string;
+    }>;
+  };
+  progressTracking: {
+    weeklyCompletionTrends: Array<{ week: string; completed: number; total: number; rate: number }>;
+    monthlyCompletionTrends: Array<{ month: string; completed: number; total: number; rate: number }>;
+    categoryBreakdown: Array<{ category: string; completed: number; total: number }>;
+    averageCompletionRate: number;
+  };
+  obstacles: Array<{
+    pattern: string;
+    description: string;
+    frequency: number;
+    lastOccurrence: string;
+    suggestedStrategies: string[];
+  }>;
+  wins: Array<{
+    description: string;
+    category: string;
+    date: string;
+    impact: 'small' | 'medium' | 'large' | 'breakthrough';
+  }>;
+  preferences: {
+    preferredGoalCategories: string[];
+    avoidedGoalCategories: string[];
+    notificationTime: string;
+    weeklyReviewDay: number;
+    wantsAccountability: boolean;
+    wantsGroupChallenges: boolean;
+    reflectionPromptTime: string;
+  };
+  lastModelUpdate: string;
+  interactionCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PsychologyPrinciple {
+  name: string;
+  description: string;
+  techniques: string[];
+}
+
+export interface ImplementationIntention {
+  type: 'implementation_intention';
+  cue: string;
+  action: string;
+  fullStatement: string;
+  principle: string;
+}
+
+export interface BurnoutCheck {
+  burnoutRisk: { level: number; category: string };
+  warnings: Array<{ level: string; message: string }>;
+  suggestions: string[];
+  principle: string;
+}
+
+export interface ConsistencyPlan {
+  title: string;
+  focus: string;
+  steps: string[];
+  principle: string;
+  mantra: string;
+}
+
+export interface AdaptationReport {
+  currentState: {
+    performance: string;
+    completionRate: number;
+    dominantTime: string;
+    peakHour: number | null;
+  };
+  adaptations: {
+    taskDifficulty: string;
+    coachingStyle: { tone: string; focus: string };
+  };
+  strengths: string[];
+  areasForGrowth: string[];
+  adaptationScore: number;
+}

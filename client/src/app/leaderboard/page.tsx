@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Medal, Users, Flame, Crown } from 'lucide-react';
 import { leaderboardAPI } from '@/lib/api';
 import { AnimatedPage, FadeIn, StaggerContainer, StaggerItem, ScaleIn } from '@/components/animations/MotionComponents';
@@ -52,32 +52,51 @@ export default function LeaderboardPage() {
 
       <FadeIn>
         <div className="flex gap-3 mb-6">
-          <motion.button
-            onClick={() => setTab('users')}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`filter-btn flex items-center gap-2 ${
-              tab === 'users' ? 'filter-btn-active' : 'filter-btn-inactive'
-            }`}
-          >
-            <Users className="w-4 h-4" /> Users
-          </motion.button>
-          <motion.button
-            onClick={() => setTab('groups')}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className={`filter-btn flex items-center gap-2 ${
-              tab === 'groups' ? 'filter-btn-active' : 'filter-btn-inactive'
-            }`}
-          >
-            <Trophy className="w-4 h-4" /> Groups
-          </motion.button>
+          <AnimatePresence mode="popLayout">
+            <motion.button
+              layout
+              onClick={() => setTab('users')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`filter-btn relative flex items-center gap-2 ${
+                tab === 'users' ? 'filter-btn-active' : 'filter-btn-inactive'
+              }`}
+            >
+              <Users className="w-4 h-4" /> Users
+              {tab === 'users' && (
+                <motion.div
+                  layoutId="leaderboardTab"
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary-500"
+                />
+              )}
+            </motion.button>
+            <motion.button
+              layout
+              onClick={() => setTab('groups')}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`filter-btn relative flex items-center gap-2 ${
+                tab === 'groups' ? 'filter-btn-active' : 'filter-btn-inactive'
+              }`}
+            >
+              <Trophy className="w-4 h-4" /> Groups
+              {tab === 'groups' && (
+                <motion.div
+                  layoutId="leaderboardTab"
+                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary-500"
+                />
+              )}
+            </motion.button>
+          </AnimatePresence>
         </div>
       </FadeIn>
 
       {userRank && tab === 'users' && (
         <ScaleIn>
-          <div className="glass-card p-5 mb-6 flex items-center justify-between">
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            className="glass-card p-5 mb-6 flex items-center justify-between"
+          >
             <div className="flex items-center gap-3">
               <Crown className="w-6 h-6 text-yellow-400" />
               <div>
@@ -89,14 +108,14 @@ export default function LeaderboardPage() {
               <p className="text-sm text-dark-400">Top {userRank.percentile}%</p>
               <div className="w-24 h-2 rounded-full bg-dark-700 mt-1">
                 <motion.div
-                  className="h-full rounded-full bg-primary-500"
+                  className="h-full rounded-full bg-gradient-to-r from-primary-500 to-accent-500 shadow-[0_0_6px_rgba(168,85,247,0.4)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${100 - userRank.percentile}%` }}
                   transition={{ duration: 1 }}
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
         </ScaleIn>
       )}
 
@@ -114,9 +133,10 @@ export default function LeaderboardPage() {
           {(tab === 'users' ? users : groups).slice(0, 3).map((entry: any, i: number) => (
             <StaggerItem key={entry.userId || entry.id}>
               <motion.div
-                whileHover={{ x: 4 }}
+                whileHover={{ y: -3, scale: 1.01 }}
+                transition={{ delay: i * 0.08 }}
                 className={`glass-card p-4 flex items-center gap-4 ${
-                  i === 0 ? 'border-yellow-500/30' : i === 1 ? 'border-gray-400/20' : i === 2 ? 'border-orange-500/20' : ''
+                  i === 0 ? 'border-yellow-500/30 shadow-[0_0_12px_rgba(234,179,8,0.15)]' : i === 1 ? 'border-gray-400/20' : i === 2 ? 'border-orange-500/20' : ''
                 }`}
               >
                 <div className={`w-10 h-10 rounded-xl ${rankBgColors[i] || 'bg-dark-700'} flex items-center justify-center`}>
@@ -172,10 +192,17 @@ export default function LeaderboardPage() {
           {(tab === 'users' ? users : groups).slice(3).map((entry: any, i: number) => (
             <StaggerItem key={entry.userId || entry.id}>
               <motion.div
-                whileHover={{ x: 4 }}
+                whileHover={{ x: 3 }}
                 className="glass-card-hover p-4 flex items-center gap-4"
               >
-                <div className="w-8 text-center font-bold text-dark-400">#{i + 4}</div>
+                <motion.div
+                  className="w-8 text-center font-bold text-dark-400"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, delay: i * 0.05 }}
+                >
+                  #{i + 4}
+                </motion.div>
 
                 {tab === 'users' ? (
                   <>

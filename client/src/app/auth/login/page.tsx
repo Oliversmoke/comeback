@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { authAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import { useBranding } from '@/hooks/useBranding';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { setAuth } = useAuthStore();
   const router = useRouter();
+  const { logoUrl, hasCustomLogo, backgroundUrl, hasCustomBackground } = useBranding();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,8 +57,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-dark-900 p-4 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-dots-pattern opacity-50" />
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl" />
+      {hasCustomBackground ? (
+        <img src={backgroundUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+      ) : (
+        <>
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary-500/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '0s' }} />
+          <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-accent-500/5 rounded-full blur-3xl animate-float-slow" style={{ animationDelay: '-2s' }} />
+        </>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -71,7 +79,17 @@ export default function LoginPage() {
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 mb-4 shadow-lg shadow-primary-500/25"
           >
-            <Target className="w-8 h-8 text-white" />
+            <motion.div
+              animate={{ boxShadow: ['0 0 0 0 rgba(0,168,255,0.3)', '0 0 20px 4px rgba(0,168,255,0.15)', '0 0 0 0 rgba(0,168,255,0.3)'] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="rounded-2xl"
+            >
+              {hasCustomLogo ? (
+              <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <Target className="w-8 h-8 text-white" />
+            )}
+            </motion.div>
           </motion.div>
           <h1 className="text-3xl font-bold gradient-text">Welcome Back</h1>
           <p className="text-dark-400 mt-2">Sign in to continue your journey</p>
@@ -85,42 +103,70 @@ export default function LoginPage() {
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-dark-200 mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`input-field ${errors.email ? 'input-field-error' : ''}`}
-                placeholder="you@example.com"
-              />
-              {errors.email && <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-400" /> {errors.email}</p>}
+              <div className="focus-within:scale-[1.005] transition-transform duration-200">
+                <label className="block text-sm font-medium text-dark-200 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`input-field ${errors.email ? 'input-field-error' : ''}`}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <AnimatePresence>
+                {errors.email && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="text-red-400 text-xs mt-1.5 flex items-center gap-1"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-red-400" /> {errors.email}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-dark-200 mb-2">Password</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`input-field pr-10 ${errors.password ? 'input-field-error' : ''}`}
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-200 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              <div className="focus-within:scale-[1.005] transition-transform duration-200">
+                <label className="block text-sm font-medium text-dark-200 mb-2">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`input-field pr-10 ${errors.password ? 'input-field-error' : ''}`}
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 hover:text-dark-200 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
-              {errors.password && <p className="text-red-400 text-xs mt-1.5 flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-red-400" /> {errors.password}</p>}
+              <AnimatePresence>
+                {errors.password && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="text-red-400 text-xs mt-1.5 flex items-center gap-1"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-red-400" /> {errors.password}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="flex justify-end">
-              <Link href="/auth/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">
-                Forgot password?
-              </Link>
+              <motion.div whileHover={{ x: 2 }}>
+                <Link href="/auth/forgot-password" className="text-sm text-primary-400 hover:text-primary-300 transition-colors">
+                  Forgot password?
+                </Link>
+              </motion.div>
             </div>
 
             <motion.button
@@ -143,9 +189,11 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-dark-400 text-sm">
               Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
-                Create one
-              </Link>
+              <motion.span whileHover={{ scale: 1.02 }} className="inline-block">
+                <Link href="/auth/register" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
+                  Create one
+                </Link>
+              </motion.span>
             </p>
           </div>
         </motion.div>

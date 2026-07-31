@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Plus, Search, Hash, Lock, Globe, Trophy } from 'lucide-react';
 import { groupsAPI } from '@/lib/api';
 import { AnimatedPage, FadeIn, StaggerContainer, StaggerItem } from '@/components/animations/MotionComponents';
@@ -95,7 +95,14 @@ export default function GroupsPage() {
               onChange={(e) => setInviteCode(e.target.value)}
               className="input-field py-2 text-sm w-32"
             />
-            <button onClick={joinGroup} className="btn-secondary text-sm py-2">Join</button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={joinGroup}
+              className="btn-secondary text-sm py-2"
+            >
+              Join
+            </motion.button>
           </div>
         </div>
       </FadeIn>
@@ -111,6 +118,7 @@ export default function GroupsPage() {
           <motion.div
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
+            whileHover={{ scale: 1.01 }}
             className="glass-card p-6 w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
@@ -155,30 +163,35 @@ export default function GroupsPage() {
             <Hash className="w-5 h-5 text-primary-400" />
             My Groups
           </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            {myGroups.map((group) => (
-              <Link key={group._id} href={`/groups/${group._id}`}>
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  className="glass-card-hover p-5"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
-                      <Users className="w-6 h-6 text-white" />
+          <AnimatePresence mode="popLayout">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {myGroups.map((group) => (
+                <Link key={group._id} href={`/groups/${group._id}`}>
+                  <motion.div
+                    layout
+                    whileHover={{ y: -2 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="glass-card-hover p-5 relative overflow-hidden group"
+                  >
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center">
+                        <Users className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{group.name}</h3>
+                        <span className={`badge ${getCategoryColor(group.category)}`}>{group.category}</span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{group.name}</h3>
-                      <span className={`badge ${getCategoryColor(group.category)}`}>{group.category}</span>
+                    <div className="flex items-center justify-between text-sm text-dark-400">
+                      <span>{group.memberCount || group.members?.length || 0} members</span>
+                      <span className="text-purple-400">{group.totalXp || 0} XP</span>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-dark-400">
-                    <span>{group.memberCount || group.members?.length || 0} members</span>
-                    <span className="text-purple-400">{group.totalXp || 0} XP</span>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          </AnimatePresence>
         </FadeIn>
       )}
 
@@ -188,35 +201,40 @@ export default function GroupsPage() {
           <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.filter((g) => !myGroups.find((mg) => mg._id === g._id)).map((group) => (
-            <StaggerItem key={group._id}>
-              <Link href={`/groups/${group._id}`}>
-                <motion.div
-                  whileHover={{ y: -2 }}
-                  className="glass-card-hover p-5"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-dark-700 flex items-center justify-center">
-                      {group.isPrivate ? <Lock className="w-6 h-6 text-dark-400" /> : <Globe className="w-6 h-6 text-primary-400" />}
+        <AnimatePresence mode="popLayout">
+          <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.filter((g) => !myGroups.find((mg) => mg._id === g._id)).map((group) => (
+              <StaggerItem key={group._id}>
+                <Link href={`/groups/${group._id}`}>
+                  <motion.div
+                    layout
+                    whileHover={{ y: -2 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="glass-card-hover p-5 relative overflow-hidden group"
+                  >
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-xl bg-dark-700 flex items-center justify-center">
+                        {group.isPrivate ? <Lock className="w-6 h-6 text-dark-400" /> : <Globe className="w-6 h-6 text-primary-400" />}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{group.name}</h3>
+                        <span className={`badge ${getCategoryColor(group.category)}`}>{group.category}</span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold">{group.name}</h3>
-                      <span className={`badge ${getCategoryColor(group.category)}`}>{group.category}</span>
+                    {group.description && (
+                      <p className="text-sm text-dark-400 line-clamp-2 mb-3">{group.description}</p>
+                    )}
+                    <div className="flex items-center justify-between text-sm text-dark-400">
+                      <span>{group.memberCount || 0} members</span>
+                      <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> {group.totalXp || 0} XP</span>
                     </div>
-                  </div>
-                  {group.description && (
-                    <p className="text-sm text-dark-400 line-clamp-2 mb-3">{group.description}</p>
-                  )}
-                  <div className="flex items-center justify-between text-sm text-dark-400">
-                    <span>{group.memberCount || 0} members</span>
-                    <span className="flex items-center gap-1"><Trophy className="w-3 h-3" /> {group.totalXp || 0} XP</span>
-                  </div>
-                </motion.div>
-              </Link>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+                  </motion.div>
+                </Link>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </AnimatePresence>
       )}
     </AnimatedPage>
   );

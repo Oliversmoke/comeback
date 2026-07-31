@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Check } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
 
 export function ThemeToggleButton({ className = '' }: { className?: string }) {
@@ -12,14 +12,22 @@ export function ThemeToggleButton({ className = '' }: { className?: string }) {
       onClick={toggleTheme}
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
+      animate={theme === 'dark' ? { rotate: 0 } : { rotate: 90 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
       className={`p-1.5 rounded-lg hover:bg-dark-700 transition-colors ${className}`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
-      {theme === 'dark' ? (
-        <Sun className="w-4 h-4 text-dark-400" />
-      ) : (
-        <Moon className="w-4 h-4 text-dark-400" />
-      )}
+      <motion.span
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300 }}
+      >
+        {theme === 'dark' ? (
+          <Sun className="w-4 h-4 text-dark-400" />
+        ) : (
+          <Moon className="w-4 h-4 text-dark-400" />
+        )}
+      </motion.span>
     </motion.button>
   );
 }
@@ -37,12 +45,13 @@ export function ThemeToggleCard() {
         ].map(({ id, label, icon: Icon, desc }) => (
           <motion.button
             key={id}
+            layout
             onClick={() => setTheme(id as 'dark' | 'light')}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className={`p-5 rounded-xl border-2 text-left transition-all ${
               theme === id
-                ? 'border-primary-500 bg-primary-500/10'
+                ? 'border-primary-500 bg-primary-500/10 shadow-lg shadow-primary-500/10'
                 : 'border-dark-700 bg-dark-800/50 hover:border-dark-500'
             }`}
           >
@@ -51,7 +60,10 @@ export function ThemeToggleCard() {
             }`}>
               <Icon className="w-5 h-5" />
             </div>
-            <p className="font-medium text-sm mb-1">{label}</p>
+            <p className="font-medium text-sm mb-1 flex items-center">
+              {label}
+              {theme === id && <Check className="w-3.5 h-3.5 text-primary-400 ml-auto" />}
+            </p>
             <p className="text-xs text-dark-400">{desc}</p>
           </motion.button>
         ))}

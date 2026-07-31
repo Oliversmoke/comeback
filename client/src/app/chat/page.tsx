@@ -132,7 +132,8 @@ export default function ChatPage() {
         {/* Group List */}
         <div className="w-72 flex-shrink-0 hidden md:block">
           <div className="glass-card h-full overflow-y-auto">
-            <div className="p-4 border-b border-dark-700/50">
+            <div className="p-4 relative border-b border-dark-700/50">
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary-500/50 to-transparent" />
               <h2 className="font-semibold flex items-center gap-2">
                 <Users className="w-4 h-4 text-primary-400" />
                 Your Groups
@@ -148,18 +149,21 @@ export default function ChatPage() {
                 <p className="text-sm text-dark-400">No groups yet</p>
               </div>
             ) : (
-              groups.map((group) => (
-                <button
-                  key={group._id}
-                  onClick={() => selectGroup(group)}
-                  className={`w-full p-4 text-left hover:bg-dark-700/30 transition-all border-b border-dark-700/30 ${
-                    activeGroup?._id === group._id ? 'bg-primary-500/10 border-l-2 border-l-primary-400' : ''
-                  }`}
-                >
-                  <p className="text-sm font-medium truncate">{group.name}</p>
-                  <p className="text-xs text-dark-400 mt-0.5">{group.memberCount || group.members?.length || 0} members</p>
-                </button>
-              ))
+              <AnimatePresence mode="popLayout">
+                {groups.map((group) => (
+                  <motion.button
+                    key={group._id}
+                    layout
+                    onClick={() => selectGroup(group)}
+                    className={`w-full p-4 text-left hover:bg-dark-700/30 transition-all border-b border-dark-700/30 ${
+                      activeGroup?._id === group._id ? 'bg-primary-500/10 border-l-2 border-l-primary-400' : ''
+                    }`}
+                  >
+                    <p className="text-sm font-medium truncate">{group.name}</p>
+                    <p className="text-xs text-dark-400 mt-0.5">{group.memberCount || group.members?.length || 0} members</p>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
             )}
           </div>
         </div>
@@ -187,22 +191,28 @@ export default function ChatPage() {
                     <Loader2 className="w-6 h-6 animate-spin text-dark-400" />
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="text-center py-8">
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-8"
+                  >
                     <MessageSquare className="w-10 h-10 text-dark-400 mx-auto mb-2" />
                     <p className="text-dark-400 text-sm">No messages yet. Start the conversation!</p>
-                  </div>
+                  </motion.div>
                 ) : (
-                  <AnimatePresence>
+                  <AnimatePresence mode="popLayout">
                     {messages.map((msg) => (
                       <motion.div
                         key={msg._id}
+                        layout
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.01 }}
                         className={`flex gap-3 ${msg.sender?._id === user?.id ? 'justify-end' : ''}`}
                       >
                         {msg.sender?._id !== user?.id && (
                           <img
-                            src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${msg.sender?.username}&background=6366f1&color=fff`}
+                            src={msg.sender?.avatar || `https://ui-avatars.com/api/?name=${msg.sender?.username}&background=00A8FF&color=fff`}
                             alt=""
                             className="w-8 h-8 rounded-full flex-shrink-0 mt-1"
                           />
@@ -244,6 +254,8 @@ export default function ChatPage() {
                   <motion.button
                     type="submit"
                     disabled={!input.trim()}
+                    animate={input.trim() ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ duration: 2, repeat: Infinity }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="btn-primary px-5"

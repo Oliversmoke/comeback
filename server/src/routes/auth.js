@@ -9,6 +9,8 @@ import { catchAsync, AppError } from '../middleware/errorHandler.js';
 import { validate, registerSchema, loginSchema } from '../validators/schemas.js';
 import { notifyNewRegistration, sendPasswordReset } from '../services/emailService.js';
 import { logActivity } from '../services/backupService.js';
+import { initializeAchievements } from '../services/achievementService.js';
+import { recordActivity } from '../services/aiMemoryService.js';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const router = Router();
@@ -37,6 +39,8 @@ router.post('/register', validate(registerSchema), catchAsync(async (req, res) =
   user.refreshToken = tokens.refreshToken;
   await user.save();
 
+  initializeAchievements(user._id).catch(() => {});
+
   res.status(201).json({
     success: true,
     data: { user: userJSON, ...tokens },
@@ -55,6 +59,7 @@ router.post('/login', validate(loginSchema), (req, res, next) => {
       dbUser.isOnline = true;
       dbUser.lastSeen = new Date();
       await dbUser.save();
+      recordActivity(dbUser._id, 'login', { description: 'User logged in' }).catch(() => {});
     }
 
     res.json({

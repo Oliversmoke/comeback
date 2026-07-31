@@ -1,11 +1,20 @@
 export default function SettingsLoading() {
   return (
-    <div className="max-w-2xl mx-auto space-y-8 animate-pulse">
-      <div className="h-8 w-32 bg-dark-700 rounded-lg" />
-      <div className="space-y-6">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-48 bg-dark-700 rounded-xl" />
-        ))}
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <div className="skeleton-avatar" />
+        <div className="space-y-2">
+          <div className="skeleton-title" />
+          <div className="skeleton-text w-48" />
+        </div>
+      </div>
+      <div className="flex gap-6 flex-col lg:flex-row">
+        <div className="lg:w-56 space-y-2">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="skeleton h-12 rounded-xl" />
+          ))}
+        </div>
+        <div className="flex-1 skeleton h-96 rounded-2xl" />
       </div>
     </div>
   );

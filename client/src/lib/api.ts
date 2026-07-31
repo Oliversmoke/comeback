@@ -147,12 +147,76 @@ export const leaderboardAPI = {
 };
 
 export const aiAPI = {
-  generateTasks: () =>
-    api.post('/ai/generate-tasks'),
+  generateTasks: (data?: { obstacle?: string }) =>
+    api.post('/ai/generate-tasks', data || {}),
   getInsights: () =>
     api.post('/ai/insights'),
   chat: (data: { prompt: string; context?: any }) =>
     api.post('/ai/chat', data),
   getGroupAdaptations: (groupId: string) =>
     api.post('/ai/group-adapt', { groupId }),
+  getRecoveryPlan: (daysMissed?: number) =>
+    api.post('/ai/recovery-plan', { daysMissed }),
+  getReflectionPrompt: (type?: string, index?: number) =>
+    api.get('/ai/reflection-prompt', { params: { type, index } }),
+  getChallenge: () =>
+    api.get('/ai/challenge'),
+  trackWin: (data: { description: string; category?: string; impact?: string }) =>
+    api.post('/ai/track-win', data),
+  getEncouragement: (type?: string, replacements?: Record<string, string>) =>
+    api.post('/ai/encouragement', { type, replacements }),
+};
+
+export const memoryAPI = {
+  get: () =>
+    api.get('/memory'),
+  update: (data: Record<string, unknown>) =>
+    api.put('/memory', data),
+  getTimeline: (days?: number) =>
+    api.get('/memory/timeline', { params: { days } }),
+  getTrends: (days?: number) =>
+    api.get('/memory/trends', { params: { days } }),
+  getInsights: (type?: string, limit?: number) =>
+    api.get('/memory/insights', { params: { type, limit } }),
+  markInsightRead: (id: string) =>
+    api.put(`/memory/insights/${id}/read`),
+  dismissInsight: (id: string) =>
+    api.put(`/memory/insights/${id}/dismiss`),
+  getUnreadInsightCount: () =>
+    api.get('/memory/insights/unread-count'),
+  getActivitySummary: (days?: number) =>
+    api.get('/memory/activity/summary', { params: { days } }),
+};
+
+export const psychologyAPI = {
+  getPrinciples: () =>
+    api.get('/psychology/principles'),
+  getPrinciple: (name: string) =>
+    api.get(`/psychology/principle/${name}`),
+  generateIntention: (goalTitle: string, obstacle?: string) =>
+    api.post('/psychology/intention', { goalTitle, obstacle }),
+  burnoutCheck: () =>
+    api.get('/psychology/burnout-check'),
+  growthMindset: (obstacle?: string) =>
+    api.get('/psychology/growth-mindset', { params: { obstacle } }),
+  consistencyPlan: () =>
+    api.get('/psychology/consistency-plan'),
+  reframe: (obstacle: string) =>
+    api.post('/psychology/reframe', { obstacle }),
+  getEncouragement: (type?: string, replacements?: Record<string, string>) =>
+    api.get('/psychology/encouragement', { params: { type, ...replacements } }),
+  getReflectionPrompt: (type?: string, index?: number) =>
+    api.get('/psychology/reflection-prompt', { params: { type, index } }),
+  getRecoveryStrategy: () =>
+    api.get('/psychology/recovery-strategy'),
+  getRecoveryPlan: (daysMissed?: number) =>
+    api.post('/psychology/recovery-plan', { daysMissed }),
+  getChallenge: () =>
+    api.get('/psychology/challenge'),
+  getAnalysis: () =>
+    api.get('/psychology/analysis'),
+  runLearningCycle: () =>
+    api.post('/psychology/learning-cycle'),
+  getAdaptiveInsights: () =>
+    api.post('/psychology/adaptive-insights'),
 };

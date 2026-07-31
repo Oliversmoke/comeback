@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 import { ThemeScript } from './theme-script';
+import { JinxEffects } from '@/components/layout/JinxEffects';
 
 export const metadata: Metadata = {
   title: 'comeback.AI - Social Productivity',
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#6366f1',
+  themeColor: '#00A8FF',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -46,7 +47,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `,
           }}
         />
-        <Providers>{children}</Providers>
+        <Providers>
+          <JinxEffects />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -1,7 +1,7 @@
 FROM gradle:8.12-jdk21 AS builder
 WORKDIR /app
 COPY --chown=gradle:gradle . .
-RUN rm -rf .gradle && gradle :api-gateway:shadowJar --no-daemon -x test
+RUN gradle :api-gateway:shadowJar --no-daemon -x test
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

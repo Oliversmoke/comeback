@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Target, ArrowLeft, Clock, CheckCircle2, Trash2, Plus } from 'lucide-react';
 import { goalsAPI } from '@/lib/api';
 import { AnimatedPage, FadeIn } from '@/components/animations/MotionComponents';
@@ -68,8 +68,15 @@ export default function GoalDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-6">
+        <div className="skeleton h-10 w-32 rounded-xl" />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="skeleton h-48 rounded-2xl" />
+            <div className="skeleton h-64 rounded-2xl" />
+          </div>
+          <div className="skeleton h-48 rounded-2xl" />
+        </div>
       </div>
     );
   }
@@ -79,13 +86,15 @@ export default function GoalDetailPage() {
   return (
     <AnimatedPage>
       <FadeIn>
-        <button
+        <motion.button
           onClick={() => router.push('/goals')}
+          whileHover={{ x: -3 }}
+          whileTap={{ scale: 0.97 }}
           className="flex items-center gap-2 text-dark-400 hover:text-dark-200 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Goals
-        </button>
+        </motion.button>
       </FadeIn>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -103,12 +112,14 @@ export default function GoalDetailPage() {
                     <p className="text-dark-400 mt-2">{goal.description}</p>
                   )}
                 </div>
-                <button
+                <motion.button
                   onClick={deleteGoal}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                   className="p-2 rounded-lg hover:bg-red-500/10 text-dark-400 hover:text-red-400 transition-all"
                 >
                   <Trash2 className="w-5 h-5" />
-                </button>
+                </motion.button>
               </div>
 
               <div className="mb-4">
@@ -158,25 +169,27 @@ export default function GoalDetailPage() {
                 />
                 <motion.button
                   type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   className="btn-primary"
                 >
                   <Plus className="w-4 h-4" />
                 </motion.button>
               </form>
 
-              <div className="space-y-2">
+              <motion.div className="space-y-2" layout>
                 {goal.milestones?.length === 0 ? (
                   <p className="text-dark-400 text-sm text-center py-4">No milestones yet</p>
                 ) : (
-                  goal.milestones?.map((ms) => (
-                    <motion.div
-                      key={ms._id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-700/30 transition-all"
-                    >
+                  <AnimatePresence mode="popLayout">
+                    {goal.milestones?.map((ms) => (
+                      <motion.div
+                        key={ms._id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-700/30 transition-all"
+                      >
                       <button
                         onClick={() => toggleMilestone(ms._id!)}
                         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -194,9 +207,10 @@ export default function GoalDetailPage() {
                         <span className="text-xs text-dark-400">{formatDate(ms.completedAt)}</span>
                       )}
                     </motion.div>
-                  ))
-                )}
-              </div>
+                  ))}
+                </AnimatePresence>
+              )}
+              </motion.div>
             </div>
           </FadeIn>
         </div>

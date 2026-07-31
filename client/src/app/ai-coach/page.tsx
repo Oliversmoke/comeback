@@ -2,19 +2,22 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Sparkles, Target, Lightbulb, TrendingUp, User, MessageSquare, LockKeyhole } from 'lucide-react';
-import { aiAPI } from '@/lib/api';
+import { Bot, Send, Sparkles, Target, Lightbulb, TrendingUp, User, MessageSquare, Brain, Heart, AlertTriangle, RefreshCw, Trophy, BookOpen, Zap } from 'lucide-react';
+import { aiAPI, psychologyAPI } from '@/lib/api';
 import { AnimatedPage, FadeIn } from '@/components/animations/MotionComponents';
 import { useAuthStore } from '@/store/authStore';
+import { ImplementationIntention, BurnoutCheck, ConsistencyPlan } from '@/types';
 import toast from 'react-hot-toast';
 
 interface ChatMessage {
   role: 'user' | 'coach';
   content: string;
   timestamp: Date;
+  psychologyContext?: {
+    intention?: ImplementationIntention;
+    encouragement?: string;
+  };
 }
-
-const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL;
 
 export default function AICoachPage() {
   const { user } = useAuthStore();
@@ -28,9 +31,12 @@ export default function AICoachPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<any>(null);
+  const [intention, setIntention] = useState<ImplementationIntention | null>(null);
+  const [burnout, setBurnout] = useState<BurnoutCheck | null>(null);
+  const [consistencyPlan, setConsistencyPlan] = useState<ConsistencyPlan | null>(null);
+  const [showPsychology, setShowPsychology] = useState(false);
+  const [loadingPsych, setLoadingPsych] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const isOwner = OWNER_EMAIL ? user?.email === OWNER_EMAIL : false;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,10 +55,12 @@ export default function AICoachPage() {
         prompt: userMsg,
         context: { recentMessages: messages.slice(-5) },
       });
+      const encouragement = data.data.encouragement;
       setMessages((prev) => [...prev, {
         role: 'coach',
         content: data.data.response,
         timestamp: new Date(),
+        psychologyContext: encouragement ? { encouragement } : undefined,
       }]);
     } catch {
       toast.error('Failed to get AI response');
@@ -94,28 +102,24 @@ export default function AICoachPage() {
     }
   };
 
-  if (!isOwner) {
-    return (
-      <AnimatedPage>
-        <div className="min-h-[80vh] flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center max-w-lg"
-          >
-            <div className="w-24 h-24 rounded-3xl bg-dark-700/50 flex items-center justify-center mx-auto mb-6">
-              <LockKeyhole className="w-12 h-12 text-dark-400" />
-            </div>
-            <h1 className="text-3xl font-bold mb-3 text-dark-300">AI Coach</h1>
-            <p className="text-dark-500 mb-8 text-lg">
-              This feature is currently in private preview and not yet available for your account.
-            </p>
-          </motion.div>
-        </div>
-      </AnimatedPage>
-    );
-  }
+  const loadPsychology = async () => {
+    setLoadingPsych(true);
+    setShowPsychology(true);
+    try {
+      const [intentionRes, burnoutRes, planRes] = await Promise.all([
+        psychologyAPI.generateIntention('your goals', ''),
+        psychologyAPI.burnoutCheck(),
+        psychologyAPI.consistencyPlan(),
+      ]);
+      setIntention(intentionRes.data.data);
+      setBurnout(burnoutRes.data.data);
+      setConsistencyPlan(planRes.data.data);
+    } catch {
+      // silently fail — psychology features are enhancements
+    } finally {
+      setLoadingPsych(false);
+    }
+  };
 
   return (
     <AnimatedPage>
@@ -158,7 +162,8 @@ export default function AICoachPage() {
                       <Bot className="w-4 h-4 text-accent-400" />
                     </div>
                   )}
-                  <div
+                  <motion.div
+                    whileHover={msg.role === 'user' ? { scale: 1.01 } : {}}
                     className={`max-w-[80%] p-4 rounded-2xl ${
                       msg.role === 'user'
                         ? 'bg-primary-500/20 border border-primary-500/30 rounded-br-md'
@@ -169,7 +174,7 @@ export default function AICoachPage() {
                     <p className="text-[10px] text-dark-500 mt-2">
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
-                  </div>
+                  </motion.div>
                   {msg.role === 'user' && (
                     <div className="w-8 h-8 rounded-lg bg-primary-500/20 flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-primary-400" />
@@ -189,18 +194,18 @@ export default function AICoachPage() {
                   <div className="bg-dark-700/50 border border-dark-600/50 p-4 rounded-2xl rounded-bl-md">
                     <div className="flex gap-1">
                       <motion.div
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
+                        animate={{ opacity: [0, 1, 0], y: [0, -3, 0] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
                         className="w-2 h-2 rounded-full bg-accent-400"
                       />
                       <motion.div
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.3 }}
+                        animate={{ opacity: [0, 1, 0], y: [0, -3, 0] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: 0.15 }}
                         className="w-2 h-2 rounded-full bg-accent-400"
                       />
                       <motion.div
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.6 }}
+                        animate={{ opacity: [0, 1, 0], y: [0, -3, 0] }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
                         className="w-2 h-2 rounded-full bg-accent-400"
                       />
                     </div>
@@ -229,6 +234,8 @@ export default function AICoachPage() {
                 disabled={loading || !input.trim()}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                animate={input.trim() ? { scale: [1, 1.05, 1] } : {}}
+                transition={{ duration: 2, repeat: Infinity }}
                 className="btn-primary px-5"
               >
                 <Send className="w-4 h-4" />
@@ -237,31 +244,43 @@ export default function AICoachPage() {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto">
           <div className="glass-card p-5">
             <h3 className="font-semibold flex items-center gap-2 mb-3">
               <Sparkles className="w-4 h-4 text-accent-400" />
               Quick Actions
             </h3>
             <div className="space-y-2">
-              <button
+              <motion.button
                 onClick={getInsights}
+                whileHover={{ scale: 1.02, x: 3 }}
+                whileTap={{ scale: 0.98 }}
+                layout
                 className="w-full p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 border border-dark-700/50 text-left text-sm transition-all flex items-center gap-3"
               >
                 <Lightbulb className="w-4 h-4 text-yellow-400" />
                 Get Productivity Insights
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={generateTasks}
+                whileHover={{ scale: 1.02, x: 3 }}
+                whileTap={{ scale: 0.98 }}
+                layout
                 className="w-full p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 border border-dark-700/50 text-left text-sm transition-all flex items-center gap-3"
               >
                 <Target className="w-4 h-4 text-primary-400" />
                 Generate Daily Tasks
-              </button>
-              <button className="w-full p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 border border-dark-700/50 text-left text-sm transition-all flex items-center gap-3">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                Analyze My Progress
-              </button>
+              </motion.button>
+              <motion.button
+                onClick={loadPsychology}
+                whileHover={{ scale: 1.02, x: 3 }}
+                whileTap={{ scale: 0.98 }}
+                layout
+                className="w-full p-3 rounded-xl bg-dark-700/30 hover:bg-accent-500/10 border border-dark-700/50 text-left text-sm transition-all flex items-center gap-3"
+              >
+                <Brain className="w-4 h-4 text-accent-400" />
+                Psychology Check-In
+              </motion.button>
             </div>
           </div>
 
@@ -277,18 +296,64 @@ export default function AICoachPage() {
               </h3>
               <div className="space-y-3">
                 <div className="p-3 rounded-xl bg-primary-500/10 border border-primary-500/20">
-                  <p className="text-xs text-dark-400 mb-1">💡 Insight</p>
+                  <p className="text-xs text-dark-400 mb-1">Insight</p>
                   <p className="text-sm">{insights.insight}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-accent-500/10 border border-accent-500/20">
-                  <p className="text-xs text-dark-400 mb-1">🎯 Suggestion</p>
+                  <p className="text-xs text-dark-400 mb-1">Suggestion</p>
                   <p className="text-sm">{insights.suggestion}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
-                  <p className="text-xs text-dark-400 mb-1">🌟 Encouragement</p>
+                  <p className="text-xs text-dark-400 mb-1">Encouragement</p>
                   <p className="text-sm">{insights.encouragement}</p>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {showPsychology && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-5"
+            >
+              <h3 className="font-semibold flex items-center gap-2 mb-3">
+                <Brain className="w-4 h-4 text-accent-400" />
+                Psychology Check-In
+              </h3>
+              {loadingPsych ? (
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-dark-600 rounded w-3/4" />
+                  <div className="h-4 bg-dark-600 rounded w-1/2" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {burnout && burnout.burnoutRisk.level > 50 && (
+                    <div className="p-3 rounded-xl bg-warning-500/10 border border-warning-500/20">
+                      <p className="text-xs text-warning-400 mb-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Burnout Risk: {burnout.burnoutRisk.category}
+                      </p>
+                      <p className="text-xs text-dark-300">{burnout.suggestions[0]}</p>
+                    </div>
+                  )}
+                  {intention && (
+                    <div className="p-3 rounded-xl bg-primary-500/10 border border-primary-500/20">
+                      <p className="text-xs text-primary-400 mb-1 flex items-center gap-1">
+                        <Zap className="w-3 h-3" /> Implementation Intention
+                      </p>
+                      <p className="text-xs text-dark-300 italic">"{intention.fullStatement}"</p>
+                    </div>
+                  )}
+                  {consistencyPlan && (
+                    <div className="p-3 rounded-xl bg-accent-500/10 border border-accent-500/20">
+                      <p className="text-xs text-accent-400 mb-1 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> {consistencyPlan.title}
+                      </p>
+                      <p className="text-xs text-dark-300 italic">"{consistencyPlan.mantra}"</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -305,13 +370,15 @@ export default function AICoachPage() {
                 'How do I stay motivated?',
                 'Analyze my current progress',
               ].map((q) => (
-                <button
+                <motion.button
                   key={q}
                   onClick={() => { setInput(q); }}
+                  whileHover={{ x: 3 }}
+                  whileTap={{ scale: 0.98 }}
                   className="w-full text-left text-sm text-dark-400 hover:text-dark-200 p-2 rounded-lg hover:bg-dark-700/50 transition-all"
                 >
                   &ldquo;{q}&rdquo;
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>

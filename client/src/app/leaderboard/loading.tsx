@@ -1,14 +1,18 @@
 export default function LeaderboardLoading() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="h-8 w-48 bg-dark-700 rounded-lg" />
-      <div className="flex gap-2 mb-6">
-        <div className="h-10 w-24 bg-dark-700 rounded-lg" />
-        <div className="h-10 w-28 bg-dark-700 rounded-lg" />
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="skeleton-title" />
+        <div className="skeleton-text w-48" />
       </div>
-      <div className="space-y-3">
+      <div className="flex gap-3 mb-2">
+        <div className="skeleton h-10 w-24 rounded-xl" />
+        <div className="skeleton h-10 w-28 rounded-xl" />
+      </div>
+      <div className="skeleton h-24 rounded-2xl mb-6" />
+      <div className="space-y-2">
         {[...Array(10)].map((_, i) => (
-          <div key={i} className="h-16 bg-dark-700 rounded-xl" />
+          <div key={i} className="skeleton h-16 rounded-2xl" />
         ))}
       </div>
     </div>

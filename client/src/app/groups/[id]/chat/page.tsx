@@ -128,8 +128,9 @@ export default function GroupChatPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-6">
+        <div className="skeleton h-10 w-32 rounded-xl" />
+        <div className="skeleton h-[calc(100vh-12rem)] rounded-2xl" />
       </div>
     );
   }
@@ -139,12 +140,14 @@ export default function GroupChatPage() {
   return (
     <AnimatedPage>
       <FadeIn>
-        <button
+        <motion.button
           onClick={() => router.push(`/groups/${groupId}`)}
+          whileHover={{ x: -3 }}
+          whileTap={{ scale: 0.97 }}
           className="flex items-center gap-2 text-wa-300 hover:text-wa-50 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Group
-        </button>
+        </motion.button>
       </FadeIn>
 
       <div className="flex flex-col h-[calc(100vh-12rem)] bg-wa-950 rounded-xl overflow-hidden border border-wa-700/50 relative">
@@ -168,19 +171,25 @@ export default function GroupChatPage() {
               <Loader2 className="w-6 h-6 animate-spin text-wa-300" />
             </div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-8">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-8"
+            >
               <MessageSquare className="w-10 h-10 text-wa-300 mx-auto mb-2" />
               <p className="text-wa-300 text-sm">No messages yet. Start the conversation!</p>
-            </div>
+            </motion.div>
           ) : (
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
               {messages.map((msg) => {
                 const isOwn = msg.sender?._id === user?.id;
                 return (
                   <motion.div
                     key={msg._id}
+                    layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.01 }}
                     className={`flex gap-2 ${isOwn ? 'justify-end' : 'justify-start'} mb-1`}
                   >
                     {!isOwn && (
@@ -243,6 +252,8 @@ export default function GroupChatPage() {
             <motion.button
               type="submit"
               disabled={!input.trim()}
+              animate={input.trim() ? { scale: [1, 1.05, 1] } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-green-500 flex items-center justify-center disabled:opacity-40 transition-all shadow-sm shadow-brand-500/20"

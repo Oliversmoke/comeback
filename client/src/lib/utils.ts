@@ -75,5 +75,5 @@ export function getStatusColor(status: string): string {
 }
 
 export function generateAvatarUrl(name: string): string {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&bold=true`;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=00A8FF&color=fff&bold=true`;
 }

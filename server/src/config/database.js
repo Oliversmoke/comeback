@@ -22,6 +22,9 @@ const connectDB = async () => {
     return conn;
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
+    if (process.env.NODE_ENV === 'production') {
+      throw error;
+    }
     console.log('Falling back to in-memory MongoDB...');
   }
 

@@ -108,22 +108,33 @@ export default function GoalsPage() {
           )}
         </motion.div>
       ) : (
+        <AnimatePresence mode="popLayout">
         <StaggerContainer className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((goal) => (
             <StaggerItem key={goal._id}>
               <motion.div
+                layout
                 whileHover={{ y: -2 }}
-                className="glass-card-hover p-5 group"
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                className="glass-card-hover p-5 group relative overflow-hidden"
               >
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary-500/5 to-accent-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className={`w-2 h-2 rounded-full ${goal.progress >= 100 ? 'bg-green-400' : 'bg-primary-400'}`} />
                     <span className={`badge ${getCategoryColor(goal.category)}`}>{goal.category}</span>
                   </div>
                   <div className="relative">
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-lg hover:bg-dark-700">
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      whileTap={{ scale: 0.9 }}
+                      whileHover={{ scale: 1.1 }}
+                      className="p-1 rounded-lg hover:bg-dark-700"
+                    >
                       <MoreVertical className="w-4 h-4 text-dark-400" />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
 
@@ -163,6 +174,7 @@ export default function GoalsPage() {
             </StaggerItem>
           ))}
         </StaggerContainer>
+        </AnimatePresence>
       )}
     </AnimatedPage>
   );

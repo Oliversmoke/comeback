@@ -8,6 +8,8 @@ import { catchAsync, AppError } from '../middleware/errorHandler.js';
 import { validate, taskSchema } from '../validators/schemas.js';
 import { awardXp, updateStreak } from '../services/xpService.js';
 import { generateReviewQuestions, verifyTaskProof } from '../services/openai.js';
+import { recordActivity } from '../services/aiMemoryService.js';
+import { checkAchievements } from '../services/achievementService.js';
 
 const router = Router();
 
@@ -118,6 +120,15 @@ router.put('/:id', catchAsync(async (req, res) => {
       }
     }
 
+    await recordActivity(req.user.id, 'task_completed', {
+      taskId: task._id,
+      category: task.aiContext?.category,
+      value: task.xpReward || 10,
+      description: task.title,
+    }).catch(() => {});
+
+    await checkAchievements(req.user.id).catch(() => {});
+
     res.json({ success: true, data: { task, xp: xpResult, streak } });
   } else {
     res.json({ success: true, data: task });
@@ -179,6 +190,15 @@ router.post('/:id/complete', catchAsync(async (req, res) => {
       await Goal.findByIdAndUpdate(task.goal, { $inc: { progress: Math.min(5, 100 - goal.progress) } });
     }
   }
+
+  await recordActivity(req.user.id, 'task_completed', {
+    taskId: task._id,
+    category: task.aiContext?.category,
+    value: task.xpReward || 10,
+    description: task.title,
+  }).catch(() => {});
+
+  await checkAchievements(req.user.id).catch(() => {});
 
   res.json({ success: true, data: { task, xp: xpResult, streak } });
 }));

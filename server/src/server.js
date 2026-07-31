@@ -27,6 +27,11 @@ import aiRoutes from './routes/ai.js';
 import conversationRoutes from './routes/conversations.js';
 import backupRoutes from './routes/backup.js';
 import uploadRoutes from './routes/upload.js';
+import memoryRoutes from './routes/memory.js';
+import analyticsRoutes from './routes/analytics.js';
+import achievementRoutes from './routes/achievements.js';
+import brandingRoutes from './routes/branding.js';
+import psychologyRoutes from './routes/psychology.js';
 import { startBackupSchedule } from './services/backupService.js';
 
 const app = express();
@@ -110,6 +115,11 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/memory', memoryRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/achievements', achievementRoutes);
+app.use('/api/branding', brandingRoutes);
+app.use('/api/psychology', psychologyRoutes);
 
 // 404 handler
 app.use((req, res) => {

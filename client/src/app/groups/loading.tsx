@@ -1,13 +1,20 @@
 export default function GroupsLoading() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="flex justify-between items-center">
-        <div className="h-8 w-36 bg-dark-700 rounded-lg" />
-        <div className="h-10 w-40 bg-dark-700 rounded-lg" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="skeleton-title" />
+          <div className="skeleton-text w-36" />
+        </div>
+        <div className="skeleton h-10 w-36 rounded-xl" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex gap-3">
+        <div className="skeleton h-10 w-48 rounded-xl" />
+        <div className="skeleton h-10 w-40 rounded-xl" />
+      </div>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-40 bg-dark-700 rounded-xl" />
+          <div key={i} className="skeleton h-40 rounded-2xl" />
         ))}
       </div>
     </div>

@@ -103,19 +103,28 @@ export default function TasksPage() {
 
       <FadeIn>
         <div className="flex flex-wrap gap-3 mb-6">
-          {['all', 'pending', 'in_progress', 'pending_review', 'completed'].map((s) => (
-            <motion.button
-              key={s}
-              onClick={() => setFilter(s)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`filter-btn ${
-                filter === s ? 'filter-btn-active' : 'filter-btn-inactive'
-              }`}
-            >
-              {s === 'in_progress' ? 'In Progress' : s.charAt(0).toUpperCase() + s.slice(1)}
-            </motion.button>
-          ))}
+          <AnimatePresence mode="wait">
+            {['all', 'pending', 'in_progress', 'pending_review', 'completed'].map((s) => (
+              <motion.button
+                key={s}
+                onClick={() => setFilter(s)}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                layout
+                className={`filter-btn ${
+                  filter === s ? 'filter-btn-active' : 'filter-btn-inactive'
+                }`}
+              >
+                {s === 'in_progress' ? 'In Progress' : s.charAt(0).toUpperCase() + s.slice(1)}
+                {filter === s && (
+                  <motion.div
+                    layoutId="activeFilter"
+                    className="w-1 h-1 rounded-full bg-primary-400 inline-block ml-1.5"
+                  />
+                )}
+              </motion.button>
+            ))}
+          </AnimatePresence>
           <div className="relative ml-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400" />
             <input
@@ -123,7 +132,7 @@ export default function TasksPage() {
               placeholder="Search tasks..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input-field pl-10 py-2 text-sm w-48"
+              className="input-field pl-10 py-2 text-sm w-48 lg:w-56"
             />
           </div>
         </div>
@@ -139,13 +148,19 @@ export default function TasksPage() {
         </StaggerContainer>
       ) : filtered.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
           className="text-center py-20"
         >
-          <div className="w-20 h-20 rounded-2xl bg-dark-800/50 flex items-center justify-center mx-auto mb-5 border border-dark-700/50">
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
+            className="w-20 h-20 rounded-2xl bg-dark-800/50 flex items-center justify-center mx-auto mb-5 border border-dark-700/50"
+          >
             <CheckCircle2 className="w-10 h-10 text-dark-400" />
-          </div>
+          </motion.div>
           <h3 className="text-xl font-semibold mb-2">{search ? 'No matching tasks' : 'All clear!'}</h3>
           <p className="text-dark-400 mb-6 max-w-sm mx-auto">
             {search ? 'Try adjusting your search or filters' : 'No tasks in this category'}
@@ -153,56 +168,73 @@ export default function TasksPage() {
         </motion.div>
       ) : (
         <StaggerContainer className="space-y-2">
-          {filtered.map((task) => (
-            <StaggerItem key={task._id}>
-              <motion.div
-                layout
-                className="glass-card-hover p-4 flex items-center gap-4"
-              >
-                <button
-                  onClick={() => task.status === 'pending_review' ? completeTask(task._id) : completeTask(task._id)}
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                    task.status === 'pending_review'
-                      ? 'border-purple-400 bg-purple-500/20'
-                      : 'border-dark-400 hover:border-green-400 hover:bg-green-500/20'
-                  }`}
+          <AnimatePresence mode="popLayout">
+            {filtered.map((task) => (
+              <StaggerItem key={task._id}>
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="glass-card-hover p-4 flex items-center gap-4 group"
                 >
-                  <div className={`w-3 h-3 rounded-full transition-colors ${
-                    task.status === 'pending_review' ? 'bg-purple-400 animate-pulse' : 'hover:bg-green-400'
-                  }`} />
-                </button>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-dark-400' : ''}`}>
-                      {task.title}
-                    </p>
-                    {task.isAiGenerated && <Sparkles className="w-3.5 h-3.5 text-purple-400" />}
-                  </div>
-                  {task.description && (
-                    <p className="text-xs text-dark-400 truncate mt-0.5">{task.description}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className={`badge ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                    {task.goal && (
-                      <span className="badge bg-dark-700 text-dark-300">{task.goal.title}</span>
-                    )}
-                    <span className="text-xs text-dark-400">{formatTimeAgo(task.createdAt)}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-purple-400 font-medium">+{task.xpReward}XP</span>
-                  <button
-                    onClick={() => deleteTask(task._id)}
-                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-dark-400 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                  <motion.button
+                    onClick={() => completeTask(task._id)}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.85 }}
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
+                      task.status === 'pending_review'
+                        ? 'border-purple-400 bg-purple-500/20'
+                        : 'border-dark-400 hover:border-green-400 hover:bg-green-500/20'
+                    }`}
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </motion.div>
-            </StaggerItem>
-          ))}
+                    <div className={`w-3 h-3 rounded-full transition-colors ${
+                      task.status === 'pending_review' ? 'bg-purple-400 animate-pulse' : 'hover:bg-green-400'
+                    }`} />
+                  </motion.button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm font-medium ${task.status === 'completed' ? 'line-through text-dark-400' : ''}`}>
+                        {task.title}
+                      </p>
+                      {task.isAiGenerated && (
+                        <motion.div
+                          initial={{ rotate: -20, scale: 0 }}
+                          animate={{ rotate: 0, scale: 1 }}
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        </motion.div>
+                      )}
+                    </div>
+                    {task.description && (
+                      <p className="text-xs text-dark-400 truncate mt-0.5">{task.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className={`badge ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                      {task.goal && (
+                        <span className="badge bg-dark-700 text-dark-300">{task.goal.title}</span>
+                      )}
+                      <span className="text-xs text-dark-400">{formatTimeAgo(task.createdAt)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-medium text-purple-400/80">+{task.xpReward}XP</span>
+                    <motion.button
+                      onClick={() => deleteTask(task._id)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-dark-400 hover:text-red-400 transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </StaggerItem>
+            ))}
+          </AnimatePresence>
         </StaggerContainer>
       )}
 
