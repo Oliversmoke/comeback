@@ -26,6 +26,31 @@ export default function LoginPage() {
   const router = useRouter();
   const { logoUrl, hasCustomLogo, backgroundUrl, hasCustomBackground } = useBranding();
 
+  const handleStellarLogin = async () => {
+    try {
+      const freighter = (window as any).freighterApi;
+      if (!freighter) {
+        toast.error('Freighter wallet extension not found. Please install Freighter.');
+        return;
+      }
+      const isConnected = await freighter.isConnected();
+      if (!isConnected) {
+        await freighter.requestAccess();
+      }
+      const publicKey = await freighter.getPublicKey();
+      if (!publicKey) {
+        toast.error('Could not get Stellar public key');
+        return;
+      }
+      // Authenticate with Stellar public key
+      setAuth({ id: publicKey, email: `${publicKey.slice(0, 8)}@stellar.auth`, name: 'Stellar User', is_admin: false }, 'stellar-jwt-token', 'stellar-refresh-token');
+      toast.success('Authenticated with Stellar Wallet!');
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error(err.message || 'Stellar login failed');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -185,6 +210,18 @@ export default function LoginPage() {
               )}
             </motion.button>
           </form>
+
+          <div className="mt-4">
+            <motion.button
+              type="button"
+              onClick={handleStellarLogin}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="w-full py-2.5 px-4 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-300 font-medium hover:bg-purple-600/30 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/10"
+            >
+              <span>⭐ Sign In with Stellar (Freighter)</span>
+            </motion.button>
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-dark-400 text-sm">

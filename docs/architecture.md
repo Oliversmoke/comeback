@@ -1,8 +1,8 @@
-# RickChat Architecture
+# Comeback Architecture
 
 ## Overview
 
-RickChat is a multi-service backend platform powering an AI Operating System with 18 microservices, each handling a specific domain. The architecture follows a distributed monolith pattern with an API Gateway providing unified access.
+Comeback is a multi-service backend platform powering an AI Operating System with 18 microservices, each handling a specific domain. The architecture follows a distributed monolith pattern with an API Gateway providing unified access.
 
 ## Architecture Diagram
 
