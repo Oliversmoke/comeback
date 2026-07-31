@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import XpTransaction from '../models/XpTransaction.js';
 import Group from '../models/Group.js';
+import * as cache from '../utils/cache.js';
 
 const LEVEL_THRESHOLDS = [
   0, 100, 250, 500, 1000, 1750, 2750, 4000, 5500, 7500,
@@ -52,6 +53,7 @@ export const awardXp = async (userId, amount, type, source = {}) => {
     const updatedUser = user.toPublicJSON();
 
     await session.commitTransaction();
+    cache.del('leaderboard:');
     return { xpAwarded: finalAmount, totalXp: user.xp, level: user.level, user: updatedUser };
   } catch (error) {
     await session.abortTransaction();
@@ -82,10 +84,15 @@ export const updateStreak = async (userId) => {
 };
 
 export const getLeaderboard = async (limit = 20, groupId = null) => {
+  const cacheKey = groupId ? `leaderboard:group:${groupId}:${limit}` : `leaderboard:global:${limit}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  let result;
   if (groupId) {
     const group = await Group.findById(groupId).populate('members.user', 'username displayName avatar xp level streak');
     if (!group) throw new Error('Group not found');
-    const sorted = group.members
+    result = group.members
       .filter((m) => m.user)
       .sort((a, b) => (b.xpInGroup || 0) - (a.xpInGroup || 0))
       .slice(0, limit)
@@ -99,35 +106,44 @@ export const getLeaderboard = async (limit = 20, groupId = null) => {
         level: m.user.level,
         streak: m.user.streak,
       }));
-    return sorted;
+  } else {
+    const users = await User.find({})
+      .sort({ xp: -1 })
+      .limit(limit)
+      .select('username displayName avatar xp level streak completedTasks');
+
+    result = users.map((u, i) => ({
+      rank: i + 1,
+      userId: u._id,
+      username: u.username,
+      displayName: u.displayName,
+      avatar: u.avatar,
+      xp: u.xp,
+      level: u.level,
+      streak: u.streak,
+      completedTasks: u.completedTasks,
+    }));
   }
 
-  const users = await User.find({})
-    .sort({ xp: -1 })
-    .limit(limit)
-    .select('username displayName avatar xp level streak completedTasks');
-
-  return users.map((u, i) => ({
-    rank: i + 1,
-    userId: u._id,
-    username: u.username,
-    displayName: u.displayName,
-    avatar: u.avatar,
-    xp: u.xp,
-    level: u.level,
-    streak: u.streak,
-    completedTasks: u.completedTasks,
-  }));
+  cache.set(cacheKey, result, 30_000);
+  return result;
 };
 
 export const getGroupLeaderboard = async (limit = 20) => {
+  const cacheKey = `leaderboard:groups:${limit}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
   const groups = await Group.find({})
     .sort({ totalXp: -1 })
     .limit(limit)
     .select('name coverImage memberCount totalXp streak category');
 
-  return groups.map((g, i) => ({
+  const result = groups.map((g, i) => ({
     rank: i + 1,
     ...g.toLeaderboardJSON(),
   }));
+
+  cache.set(cacheKey, result, 30_000);
+  return result;
 };

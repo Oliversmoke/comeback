@@ -7,7 +7,10 @@ import rateLimit from 'express-rate-limit';
 import passport from 'passport';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 import connectDB from './config/database.js';
 import configurePassport from './config/passport.js';
@@ -21,7 +24,9 @@ import groupRoutes from './routes/groups.js';
 import taskRoutes from './routes/tasks.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import aiRoutes from './routes/ai.js';
+import conversationRoutes from './routes/conversations.js';
 import backupRoutes from './routes/backup.js';
+import uploadRoutes from './routes/upload.js';
 import { startBackupSchedule } from './services/backupService.js';
 
 const app = express();
@@ -33,10 +38,18 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
+  /\.trycloudflare\.com$/,
+  /\.ngrok-free\.dev$/,
+  /\.ngrok\.io$/,
 ].filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    if (!origin) return cb(null, true);
+    const match = allowedOrigins.some((o) =>
+      typeof o === 'string' ? o === origin : o.test(origin)
+    );
+    if (match) return cb(null, true);
+    console.warn(`CORS blocked origin: ${origin}`);
     cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -94,7 +107,9 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/conversations', conversationRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // 404 handler
 app.use((req, res) => {

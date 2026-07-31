@@ -19,6 +19,10 @@ client/cordova-plugins/
 # Legacy Gradle project (old RickChat)
 .gradle/
 
+# Server data (MongoDB local files)
+server/data/
+
 # Misc
 joke-generator.js
 *.tsbuildinfo
+.vercel
