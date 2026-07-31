@@ -5,9 +5,7 @@ class OpenAIProvider {
 
   async initialize() {
     const { default: OpenAI } = await import('openai');
-    const config = { apiKey: process.env.OPENAI_API_KEY };
-    if (process.env.OPENAI_BASE_URL) config.baseURL = process.env.OPENAI_BASE_URL;
-    this.client = new OpenAI(config);
+    this.client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   }
 
   async chat(messages, options = {}) {
@@ -73,24 +71,13 @@ class GeminiProvider {
     const lastMsg = chatMessages[chatMessages.length - 1];
     if (!lastMsg) return '';
 
-    const config = {
+    const chat = this.model.startChat({
+      history,
+      systemInstruction: systemMsg?.content,
       generationConfig: {
         maxOutputTokens: options.maxTokens || 500,
         temperature: options.temperature ?? 0.7,
       },
-    };
-
-    if (systemMsg?.content) {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      config.systemInstruction = {
-        role: 'system',
-        parts: [{ text: systemMsg.content }],
-      };
-    }
-
-    const chat = this.model.startChat({
-      history,
-      ...config,
     });
 
     const result = await chat.sendMessage(lastMsg.content);

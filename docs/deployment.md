@@ -49,19 +49,19 @@ docker compose logs -f api-gateway
 kubectl apply -k k8s/overlays/production
 
 # Verify deployment
-kubectl get pods -n comeback -w
-kubectl get svc -n comeback
+kubectl get pods -n rickchat -w
+kubectl get svc -n rickchat
 
 # Access the API
-kubectl port-forward -n comeback svc/api-gateway 8080:80
+kubectl port-forward -n rickchat svc/api-gateway 8080:80
 ```
 
 ### Scaling
 
 ```bash
 # Scale specific services
-kubectl scale deployment -n comeback chat-service --replicas=5
-kubectl scale deployment -n comeback ai-gateway --replicas=3
+kubectl scale deployment -n rickchat chat-service --replicas=5
+kubectl scale deployment -n rickchat ai-gateway --replicas=3
 ```
 
 ## Google Cloud Run

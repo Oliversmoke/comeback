@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rickchat-config
+  namespace: rickchat
+data:
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  DATABASE_URL: "jdbc:postgresql://postgres:5432/rickchat"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  QDRANT_HOST: "qdrant"
+  QDRANT_PORT: "6333"
+  STORAGE_BUCKET: "rickchat-files-prod"
+  QUEUE_TYPE: "pubsub"
+  GOOGLE_CLOUD_REGION: "us-central1"
+  JWT_ISSUER: "rickchat"
+  JWT_AUDIENCE: "rickchat-api"
+  JWT_ACCESS_EXPIRY: "900"
+  JWT_REFRESH_EXPIRY: "2592000"

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { authenticate } from '../middleware/auth.js';
 import { catchAsync } from '../middleware/errorHandler.js';
-import { validateFile, uploadImage, uploadAvatar, uploadProofImage, uploadAttachment, deleteImage } from '../services/supabaseStorageService.js';
+import { validateFile, uploadImage, uploadAvatar, uploadProofImage, uploadAttachment, deleteImage } from '../services/cloudinaryService.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
 import Message from '../models/Message.js';
@@ -19,8 +19,9 @@ router.post('/avatar', authenticate, upload.single('image'), catchAsync(async (r
   validateFile(req.file);
   const result = await uploadAvatar(req.file, req.user.id);
 
-  if (req.user.avatar) {
-    deleteImage(req.user.avatar).catch(() => {});
+  if (req.user.avatar && req.user.avatar.includes('cloudinary')) {
+    const oldPublicId = req.user.avatar.split('/').slice(-2).join('/').replace(/\.[^.]+$/, '');
+    deleteImage(oldPublicId).catch(() => {});
   }
 
   await User.findByIdAndUpdate(req.user.id, { avatar: result.url });

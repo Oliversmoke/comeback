@@ -9,7 +9,6 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { pathToFileURL } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
@@ -28,27 +27,21 @@ import aiRoutes from './routes/ai.js';
 import conversationRoutes from './routes/conversations.js';
 import backupRoutes from './routes/backup.js';
 import uploadRoutes from './routes/upload.js';
-import memoryRoutes from './routes/memory.js';
-import analyticsRoutes from './routes/analytics.js';
-import achievementRoutes from './routes/achievements.js';
-import brandingRoutes from './routes/branding.js';
-import psychologyRoutes from './routes/psychology.js';
-import supabaseRoutes from './routes/supabase.js';
 import { startBackupSchedule } from './services/backupService.js';
 
-const buildApp = ({ unified = false } = {}) => {
 const app = express();
+const server = http.createServer(app);
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false }));
 const allowedOrigins = [
-  ...(process.env.FRONTEND_URL || '').split(',').map((o) => o.trim()).filter(Boolean),
+  process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
   /\.trycloudflare\.com$/,
   /\.ngrok-free\.dev$/,
   /\.ngrok\.io$/,
-];
+].filter(Boolean);
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
@@ -117,35 +110,20 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/memory', memoryRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/achievements', achievementRoutes);
-app.use('/api/branding', brandingRoutes);
-app.use('/api/psychology', psychologyRoutes);
-app.use('/api/supabase', supabaseRoutes);
 
-// 404 handler (standalone mode only). In unified mode the Next.js request
-// handler takes over for unmatched (non-API) routes, so we defer instead.
-if (unified) {
-  app.use((req, res, nextFn) => nextFn());
-} else {
-  app.use((req, res) => {
-    res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
-  });
-  app.use(errorHandler);
-}
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
+});
 
-return app;
-};
-
-export const createApp = (opts) => buildApp(opts);
+// Error handler
+app.use(errorHandler);
 
 // Start server
-let server;
 const PORT = process.env.PORT || 5000;
 
 const validateEnv = () => {
-  const required = ['JWT_SECRET'];
+  const required = ['MONGODB_URI', 'JWT_SECRET'];
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     console.error(`Missing required environment variables: ${missing.join(', ')}`);
@@ -153,24 +131,15 @@ const validateEnv = () => {
   }
 };
 
-// Connects to the database, initializes AI, wires Socket.IO and the backup
-// scheduler. Shared by the standalone and unified server entrypoints so all
-// services run inside a single process.
-export const initializeServices = async (httpServer) => {
-  await connectDB();
-  await initializeAI();
-  if (httpServer) configureSocket(httpServer);
-  startBackupSchedule();
-};
-
 const startServer = async () => {
   try {
     validateEnv();
 
-    const app = createApp();
-    server = http.createServer(app);
+    await connectDB();
 
-    await initializeServices(server);
+    await initializeAI();
+
+    configureSocket(server);
 
     server.listen(PORT, () => {
       console.log(`\n🚀 comeback.AI API Server`);
@@ -178,9 +147,16 @@ const startServer = async () => {
       console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 URL: http://localhost:${PORT}`);
       console.log(`💬 WebSocket: ws://localhost:${PORT}\n`);
+      startBackupSchedule();
     });
 
-    return server;
+    server.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Try a different port or kill the existing process.`);
+        process.exit(1);
+      }
+      throw error;
+    });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
@@ -214,11 +190,6 @@ process.on('uncaughtException', (error) => {
   console.error('The application will continue running but this should be investigated.');
 });
 
-// Only auto-start when this file is executed directly (not when imported by the
-// unified server entrypoint).
-const isMainModule = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
-if (isMainModule) {
-  startServer();
-}
+startServer();
 
-export { startServer, errorHandler };
+export { app, server };

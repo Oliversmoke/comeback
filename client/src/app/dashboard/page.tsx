@@ -2,21 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Target, ListTodo, TrendingUp, Bot, Sparkles,
-  CheckCircle2, ArrowRight, Zap, Flame, Users, Lightbulb, Star, Trophy,
+  CheckCircle2, ArrowRight, Zap, Flame, Users,
 } from 'lucide-react';
 import { tasksAPI, goalsAPI, aiAPI, leaderboardAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { AnimatedPage, FadeIn, StaggerContainer, StaggerItem, ScaleIn } from '@/components/animations/MotionComponents';
 import {
-  HoloCard, AnimatedCounter, ProgressRing, NeonBar, GlowChip, AICoachOrb, TaskCompleteButton, NexusBackground,
-} from '@/components/nexus/NexusPrimitives';
-import { calculateXpProgress, getCategoryColor, getPriorityColor, getStatusColor } from '@/lib/utils';
+  AnimatedPage, FadeIn, StaggerContainer, StaggerItem, ScaleIn,
+} from '@/components/animations/MotionComponents';
+import { calculateXpProgress, getCategoryColor, getPriorityColor, getStatusColor, formatTimeAgo } from '@/lib/utils';
 import TaskReviewModal from '@/components/features/TaskReviewModal';
 import toast from 'react-hot-toast';
-import type { Task, Goal } from '@/types';
+import type { Task, Goal, LeaderboardEntry } from '@/types';
 
 export default function DashboardPage() {
   const { user, updateXp, updateStreak } = useAuthStore();
@@ -26,7 +25,6 @@ export default function DashboardPage() {
   const [userRank, setUserRank] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [aiGenerating, setAiGenerating] = useState(false);
-  const [insightsLoading, setInsightsLoading] = useState(false);
   const [reviewTask, setReviewTask] = useState<{ task: Task; questions: string[] } | null>(null);
 
   useEffect(() => {
@@ -77,15 +75,10 @@ export default function DashboardPage() {
   };
 
   const getInsights = async () => {
-    setInsightsLoading(true);
     try {
       const { data } = await aiAPI.getInsights();
       setInsights(data.data);
-    } catch {
-      toast.error('Failed to load insights');
-    } finally {
-      setInsightsLoading(false);
-    }
+    } catch {}
   };
 
   const completeTask = async (taskId: string) => {
@@ -117,7 +110,6 @@ export default function DashboardPage() {
   };
 
   const xpProgress = calculateXpProgress(user?.xp || 0);
-  const firstName = (user?.displayName || user?.username || 'there').split(' ')[0];
 
   if (loading) {
     return (
@@ -131,7 +123,7 @@ export default function DashboardPage() {
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="skeleton-stat" />
+            <div key={i} className="skeleton-card" />
           ))}
         </div>
         <div className="grid lg:grid-cols-3 gap-6">
@@ -150,119 +142,116 @@ export default function DashboardPage() {
   }
 
   return (
-    <AnimatedPage className="relative">
-      <NexusBackground />
-
-      {/* Command header */}
+    <AnimatedPage>
+      {/* Welcome Header */}
       <FadeIn>
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <GlowChip glow="green">SYSTEM ONLINE</GlowChip>
-            <h1 className="mt-3 text-2xl font-bold tracking-tight lg:text-3xl">
-              Welcome back, <span className="gradient-text">{firstName}</span>
+            <h1 className="page-header">
+              Welcome back, <span className="gradient-text">{user?.displayName || user?.username}</span>
             </h1>
-            <p className="page-subtitle">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
+            <p className="page-subtitle">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           </div>
           <motion.button
             onClick={generateAiTasks}
             disabled={aiGenerating}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="btn-primary flex items-center justify-center gap-2 self-start disabled:opacity-60"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="btn-primary flex items-center gap-2"
           >
-            <Sparkles className={`h-4 w-4 ${aiGenerating ? 'animate-spin' : ''}`} />
-            {aiGenerating ? 'Generating...' : 'Generate AI Tasks'}
+            <Sparkles className={`w-4 h-4 ${aiGenerating ? 'animate-spin' : ''}`} />
+            {aiGenerating ? 'Generating...' : 'AI Tasks'}
           </motion.button>
         </div>
       </FadeIn>
 
-      {/* Stat HUD */}
-      <StaggerContainer className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {/* Level */}
+      {/* Stats Grid */}
+      <StaggerContainer className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StaggerItem>
-          <HoloCard glow="blue" className="h-full p-5">
-            <div className="flex items-center gap-4">
-              <ProgressRing value={xpProgress} glow="blue" size={64} stroke={5}>
-                <AnimatedCounter value={user?.level || 1} format={false} className="text-lg font-bold text-white" />
-              </ProgressRing>
-              <div className="min-w-0">
-                <p className="text-xs uppercase tracking-wider text-dark-400">Level</p>
-                <p className="mt-1 font-mono text-sm text-primary-300">
-                  <AnimatedCounter value={user?.xp || 0} /> XP
-                </p>
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="glass-card-hover p-5"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                <Zap className="w-5 h-5 text-purple-400" />
               </div>
+              <span className="text-sm text-dark-400">Level</span>
             </div>
-          </HoloCard>
+            <p className="text-2xl font-bold">{user?.level || 1}</p>
+            <div className="mt-2 xp-bar">
+              <motion.div
+                className="xp-bar-fill"
+                initial={{ width: 0 }}
+                animate={{ width: `${xpProgress}%` }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+              />
+            </div>
+            <p className="text-xs text-dark-400 mt-1">{user?.xp || 0} XP</p>
+          </motion.div>
         </StaggerItem>
 
-        {/* Streak */}
         <StaggerItem>
-          <HoloCard glow="red" className="h-full p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-error/15 text-error">
-                <Flame className="h-5 w-5" />
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="glass-card-hover p-5"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                <Flame className="w-5 h-5 text-orange-400" />
               </div>
               <span className="text-sm text-dark-400">Streak</span>
             </div>
-            <p className="text-2xl font-bold">
-              <AnimatedCounter value={user?.streak || 0} format={false} />
-              <span className="ml-1 text-sm font-normal text-dark-400">days</span>
-            </p>
-            <p className="mt-1 text-xs text-dark-400">{user?.longestStreak || 0} day best</p>
-          </HoloCard>
+            <p className="text-2xl font-bold">{user?.streak || 0}</p>
+            <p className="text-xs text-dark-400 mt-1">{user?.longestStreak || 0} day best</p>
+          </motion.div>
         </StaggerItem>
 
-        {/* Completed */}
         <StaggerItem>
-          <HoloCard glow="green" className="h-full p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/15 text-success">
-                <CheckCircle2 className="h-5 w-5" />
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="glass-card-hover p-5"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
               </div>
               <span className="text-sm text-dark-400">Completed</span>
             </div>
-            <p className="text-2xl font-bold">
-              <AnimatedCounter value={user?.completedTasks || 0} />
-            </p>
-            <p className="mt-1 text-xs text-dark-400">tasks done</p>
-          </HoloCard>
+            <p className="text-2xl font-bold">{user?.completedTasks || 0}</p>
+            <p className="text-xs text-dark-400 mt-1">tasks done</p>
+          </motion.div>
         </StaggerItem>
 
-        {/* Rank */}
         <StaggerItem>
-          <HoloCard glow="red" className="h-full p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent-500/15 text-accent-400">
-                <TrendingUp className="h-5 w-5" />
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="glass-card-hover p-5"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-blue-400" />
               </div>
               <span className="text-sm text-dark-400">Rank</span>
             </div>
-            <p className="text-2xl font-bold">#{userRank?.rank ?? '-'}</p>
-            <p className="mt-1 text-xs text-dark-400">Top {100 - (userRank?.percentile || 0)}%</p>
-          </HoloCard>
+            <p className="text-2xl font-bold">#{userRank?.rank || '-'}</p>
+            <p className="text-xs text-dark-400 mt-1">Top {100 - (userRank?.percentile || 0)}%</p>
+          </motion.div>
         </StaggerItem>
       </StaggerContainer>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left column */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Today's tasks */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Today's Tasks */}
+        <div className="lg:col-span-2 space-y-6">
           <FadeIn>
-            <HoloCard glow="blue" tilt={false} className="p-6">
-              <div className="mb-4 flex items-center justify-between">
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <ListTodo className="h-5 w-5 text-primary-400" />
+                  <ListTodo className="w-5 h-5 text-primary-400" />
                   <h2 className="text-lg font-semibold">Today&apos;s Tasks</h2>
-                  {todayTasks.length > 0 && (
-                    <span className="rounded-full bg-primary-500/15 px-2 py-0.5 font-mono text-xs text-primary-300">
-                      {todayTasks.length}
-                    </span>
-                  )}
                 </div>
-                <Link href="/tasks" className="flex items-center gap-1 text-sm text-primary-400 transition-colors hover:text-primary-300">
-                  View all <ArrowRight className="h-3 w-3" />
+                <Link href="/tasks" className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1">
+                  View all <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
 
@@ -270,251 +259,219 @@ export default function DashboardPage() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="py-12 text-center"
+                  className="text-center py-12"
                 >
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-success/10 text-success">
-                    <CheckCircle2 className="h-8 w-8" />
+                  <div className="w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="w-8 h-8 text-green-400" />
                   </div>
-                  <p className="mb-1 text-lg font-medium">All clear!</p>
-                  <p className="mb-6 text-sm text-dark-400">Every task done. Let the AI line up your next moves.</p>
+                  <p className="text-lg font-medium mb-1">All clear!</p>
+                  <p className="text-dark-400 text-sm mb-6">All tasks completed. Great job!</p>
                   <motion.button
                     onClick={generateAiTasks}
                     disabled={aiGenerating}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="btn-primary inline-flex items-center gap-2 text-sm"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="btn-primary text-sm"
                   >
-                    <Sparkles className={`h-4 w-4 ${aiGenerating ? 'animate-spin' : ''}`} />
-                    {aiGenerating ? 'Generating...' : 'Generate AI Tasks'}
+                    <Sparkles className="w-4 h-4 inline mr-1.5" />
+                    Generate AI Tasks
                   </motion.button>
                 </motion.div>
               ) : (
-                <AnimatePresence mode="popLayout">
-                  <div className="space-y-2">
-                    {todayTasks.map((task, i) => (
-                      <motion.div
-                        key={task._id}
-                        layout
-                        initial={{ opacity: 0, x: -20, scale: 0.97 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: 24, scale: 0.95, transition: { duration: 0.2 } }}
-                        transition={{ delay: i * 0.04, duration: 0.3, ease: 'easeOut' }}
+                <div className="space-y-2">
+                  {todayTasks.map((task, i) => (
+                    <motion.div
+                      key={task._id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-center gap-4 p-4 rounded-xl bg-dark-700/30 hover:bg-dark-700/50 transition-all group"
+                    >
+                      <button
                         onClick={() => completeTask(task._id)}
-                        className="group flex cursor-pointer items-center gap-4 rounded-xl border border-transparent bg-white/[0.03] p-4 transition-all hover:border-primary-500/30 hover:bg-primary-500/[0.06]"
+                        className="w-6 h-6 rounded-full border-2 border-dark-400 flex items-center justify-center hover:border-green-400 hover:bg-green-500/20 transition-all flex-shrink-0"
                       >
-                        <TaskCompleteButton onComplete={() => completeTask(task._id)} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium transition-colors group-hover:text-primary-200">
-                            {task.title}
-                          </p>
-                          {task.description && (
-                            <p className="mt-0.5 truncate text-xs text-dark-400">{task.description}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <span className={`badge ${getPriorityColor(task.priority)}`}>{task.priority}</span>
-                          {task.isAiGenerated && (
-                            <motion.div
-                              initial={{ rotate: -20, scale: 0 }}
-                              animate={{ rotate: 0, scale: 1 }}
-                              transition={{ type: 'spring', stiffness: 300 }}
-                            >
-                              <Sparkles className="h-3.5 w-3.5 text-accent-400" />
-                            </motion.div>
-                          )}
-                          <span className="font-mono text-xs font-medium text-primary-300/90">+{task.xpReward}XP</span>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </AnimatePresence>
+                        <motion.div
+                          whileHover={{ scale: 1.2 }}
+                          className="w-3 h-3 rounded-full group-hover:bg-green-400 transition-colors"
+                        />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{task.title}</p>
+                        {task.description && (
+                          <p className="text-xs text-dark-400 truncate mt-0.5">{task.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`badge ${getPriorityColor(task.priority)}`}>{task.priority}</span>
+                        {task.isAiGenerated && (
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                        )}
+                        <span className="text-xs text-dark-400">+{task.xpReward}XP</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               )}
-            </HoloCard>
+            </div>
           </FadeIn>
 
-          {/* Active goals */}
+          {/* Active Goals */}
           <FadeIn>
-            <HoloCard glow="cyan" tilt={false} className="p-6">
-              <div className="mb-4 flex items-center justify-between">
+            <div className="glass-card p-6">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary-400" />
+                  <Target className="w-5 h-5 text-primary-400" />
                   <h2 className="text-lg font-semibold">Active Goals</h2>
                 </div>
-                <Link href="/goals" className="flex items-center gap-1 text-sm text-primary-400 transition-colors hover:text-primary-300">
-                  View all <ArrowRight className="h-3 w-3" />
+                <Link href="/goals" className="text-sm text-primary-400 hover:text-primary-300 flex items-center gap-1">
+                  View all <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {goals.slice(0, 4).map((goal) => (
                   <Link key={goal._id} href={`/goals/${goal._id}`}>
                     <motion.div
                       whileHover={{ x: 4 }}
-                      className="flex items-center gap-4 rounded-xl p-3 transition-all hover:bg-white/[0.04]"
+                      className="flex items-center gap-4 p-3 rounded-xl hover:bg-dark-700/30 transition-all"
                     >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{goal.title}</p>
-                        <div className="mt-1.5 flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${goal.progress >= 100 ? 'bg-green-400' : 'bg-primary-400'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{goal.title}</p>
+                        <div className="flex items-center gap-2 mt-1">
                           <span className={`badge ${getCategoryColor(goal.category)}`}>{goal.category}</span>
                           <span className={`badge ${getStatusColor(goal.status)}`}>{goal.status}</span>
                         </div>
                       </div>
-                      <div className="w-24 text-right">
-                        <p className="mb-1 font-mono text-sm font-semibold">{goal.progress}%</p>
-                        <NeonBar value={goal.progress} glow={goal.progress >= 100 ? 'green' : 'blue'} />
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{goal.progress}%</p>
+                        <div className="w-20 h-1.5 rounded-full bg-dark-700 mt-1">
+                          <motion.div
+                            className="h-full rounded-full bg-primary-500"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${goal.progress}%` }}
+                            transition={{ duration: 0.8 }}
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   </Link>
                 ))}
                 {goals.length === 0 && (
-                  <div className="py-6 text-center">
-                    <Target className="mx-auto mb-2 h-10 w-10 text-dark-400" />
-                    <p className="text-sm text-dark-400">No active goals yet</p>
-                    <Link href="/goals" className="text-sm text-primary-400 hover:text-primary-300">
-                      Create your first goal
-                    </Link>
+                  <div className="text-center py-6">
+                    <Target className="w-10 h-10 text-dark-400 mx-auto mb-2" />
+                    <p className="text-dark-400 text-sm">No active goals yet</p>
+                    <Link href="/goals" className="text-primary-400 text-sm hover:text-primary-300">Create your first goal</Link>
                   </div>
                 )}
               </div>
-            </HoloCard>
+            </div>
           </FadeIn>
         </div>
 
-        {/* Right column */}
+        {/* Right Column */}
         <div className="space-y-6">
-          {/* AI Coach */}
+          {/* AI Coach Insight */}
           <ScaleIn>
-            <HoloCard glow="red" tilt={false} className="p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <AICoachOrb size={40} active={!insights}>
-                  <Bot className="h-4 w-4" />
-                </AICoachOrb>
-                <div>
-                  <h2 className="text-lg font-semibold leading-tight">AI Coach</h2>
-                  <p className="text-xs text-dark-400">{insights ? 'Analysis ready' : 'Standing by'}</p>
-                </div>
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Bot className="w-5 h-5 text-accent-400" />
+                <h2 className="text-lg font-semibold">AI Coach</h2>
               </div>
-
-              {insightsLoading ? (
+              <button
+                onClick={getInsights}
+                className="text-sm text-primary-400 hover:text-primary-300 mb-3 block"
+              >
+                Get Insights
+              </button>
+              {insights ? (
                 <div className="space-y-3">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="skeleton h-16 rounded-xl" />
-                  ))}
-                </div>
-              ) : insights ? (
-                <div className="space-y-3">
-                  {[
-                    { icon: Lightbulb, label: 'Insight', text: insights.insight, tone: 'primary' },
-                    { icon: Target, label: 'Suggestion', text: insights.suggestion, tone: 'accent' },
-                    { icon: Star, label: 'Encouragement', text: insights.encouragement, tone: 'success' },
-                  ].map((row, i) => {
-                    const Icon = row.icon;
-                    const map: Record<string, string> = {
-                      primary: 'bg-primary-500/10 border-primary-500/20 text-primary-400',
-                      accent: 'bg-accent-500/10 border-accent-500/20 text-accent-400',
-                      success: 'bg-success/10 border-success/20 text-success',
-                    };
-                    return (
-                      <motion.div
-                        key={row.label}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.05 * i }}
-                        className={`rounded-xl border p-3.5 ${map[row.tone]}`}
-                      >
-                        <div className="mb-1.5 flex items-center gap-1.5">
-                          <Icon className="h-3.5 w-3.5" />
-                          <p className="text-xs font-medium uppercase tracking-wide">{row.label}</p>
-                        </div>
-                        <p className="text-sm leading-relaxed text-dark-100">{row.text}</p>
-                      </motion.div>
-                    );
-                  })}
+                  <div className="p-3 rounded-xl bg-primary-500/10 border border-primary-500/20">
+                    <p className="text-xs text-dark-400 mb-1">💡 Insight</p>
+                    <p className="text-sm">{insights.insight}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-accent-500/10 border border-accent-500/20">
+                    <p className="text-xs text-dark-400 mb-1">🎯 Suggestion</p>
+                    <p className="text-sm">{insights.suggestion}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <p className="text-xs text-dark-400 mb-1">🌟 Encouragement</p>
+                    <p className="text-sm">{insights.encouragement}</p>
+                  </div>
                 </div>
               ) : (
-                <div className="py-6 text-center">
-                  <p className="mb-3 text-sm text-dark-400">Get a personalized read on your momentum.</p>
-                  <button onClick={getInsights} className="btn-primary inline-flex items-center gap-2 text-sm">
-                    <Sparkles className="h-4 w-4" />
-                    Get Insights
-                  </button>
+                <div className="text-center py-6">
+                  <Bot className="w-10 h-10 text-dark-400 mx-auto mb-2" />
+                  <p className="text-dark-400 text-sm">Click to get AI insights</p>
                 </div>
               )}
-            </HoloCard>
+            </div>
           </ScaleIn>
 
-          {/* Quick stats */}
+          {/* Quick Stats */}
           <ScaleIn>
-            <HoloCard glow="blue" tilt={false} className="p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary-400" />
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-5 h-5 text-primary-400" />
                 <h2 className="text-lg font-semibold">Quick Stats</h2>
               </div>
-              <div className="space-y-1">
-                {[
-                  { label: 'Total XP', value: `${(user?.xp || 0).toLocaleString()}`, color: 'text-primary-300' },
-                  { label: 'Streak', value: `${user?.streak || 0} days`, color: 'text-error' },
-                  { label: 'Tasks Done', value: `${user?.completedTasks || 0}`, color: 'text-success' },
-                  { label: 'Your Rank', value: `#${userRank?.rank || '-'}`, color: 'text-accent-400' },
-                ].map((stat, i) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center justify-between border-b border-white/5 py-2.5 last:border-0"
-                  >
-                    <span className="text-sm text-dark-400">{stat.label}</span>
-                    <span className={`font-mono font-semibold ${stat.color}`}>{stat.value}</span>
-                  </motion.div>
-                ))}
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-dark-700/50">
+                  <span className="text-sm text-dark-400">Total XP</span>
+                  <span className="font-semibold text-purple-400">{user?.xp || 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-dark-700/50">
+                  <span className="text-sm text-dark-400">Streak</span>
+                  <span className="font-semibold text-orange-400">{user?.streak || 0} days</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-dark-700/50">
+                  <span className="text-sm text-dark-400">Tasks Done</span>
+                  <span className="font-semibold text-green-400">{user?.completedTasks || 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm text-dark-400">Your Rank</span>
+                  <span className="font-semibold text-blue-400">#{userRank?.rank || '-'}</span>
+                </div>
               </div>
-            </HoloCard>
+            </div>
           </ScaleIn>
 
-          {/* Quick actions */}
+          {/* Quick Actions */}
           <ScaleIn>
-            <HoloCard glow="cyan" tilt={false} className="p-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-primary-400" />
-                <h2 className="text-lg font-semibold">Quick Actions</h2>
-              </div>
+            <div className="glass-card p-6">
+              <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { href: '/goals/new', icon: Target, label: 'New Goal', color: 'text-primary-400' },
-                  { href: '/groups', icon: Users, label: 'Join Group', color: 'text-info' },
-                  { href: '/leaderboard', icon: Trophy, label: 'Leaderboard', color: 'text-warning' },
-                  { href: '/ai-coach', icon: Bot, label: 'AI Chat', color: 'text-accent-400' },
-                ].map((action, i) => {
-                  const Icon = action.icon;
-                  return (
-                    <motion.div
-                      key={action.label}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.05 * i }}
-                    >
-                      <Link
-                        href={action.href}
-                        className="group flex flex-col items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] p-3.5 text-center transition-all hover:border-primary-500/30 hover:bg-primary-500/[0.08]"
-                      >
-                        <motion.span
-                          whileHover={{ scale: 1.12, rotate: -6 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                          className="inline-flex"
-                        >
-                          <Icon className={`h-5 w-5 ${action.color}`} />
-                        </motion.span>
-                        <span className="text-xs font-medium text-dark-300 transition-colors group-hover:text-dark-100">
-                          {action.label}
-                        </span>
-                      </Link>
-                    </motion.div>
-                  );
-                })}
+                <Link
+                  href="/goals/new"
+                  className="p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 hover:border-primary-500/30 border border-dark-700/50 transition-all text-center"
+                >
+                  <Target className="w-6 h-6 text-primary-400 mx-auto mb-1" />
+                  <span className="text-xs">New Goal</span>
+                </Link>
+                <Link
+                  href="/groups"
+                  className="p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 hover:border-primary-500/30 border border-dark-700/50 transition-all text-center"
+                >
+                  <Users className="w-6 h-6 text-blue-400 mx-auto mb-1" />
+                  <span className="text-xs">Join Group</span>
+                </Link>
+                <Link
+                  href="/tasks"
+                  className="p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 hover:border-primary-500/30 border border-dark-700/50 transition-all text-center"
+                >
+                  <ListTodo className="w-6 h-6 text-green-400 mx-auto mb-1" />
+                  <span className="text-xs">New Task</span>
+                </Link>
+                <Link
+                  href="/ai-coach"
+                  className="p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 hover:border-primary-500/30 border border-dark-700/50 transition-all text-center"
+                >
+                  <Bot className="w-6 h-6 text-purple-400 mx-auto mb-1" />
+                  <span className="text-xs">AI Chat</span>
+                </Link>
               </div>
-            </HoloCard>
+            </div>
           </ScaleIn>
         </div>
       </div>

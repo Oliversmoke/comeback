@@ -5,10 +5,10 @@ import Message from '../models/Message.js';
 import Group from '../models/Group.js';
 
 const allowedOrigins = [
-  ...(process.env.FRONTEND_URL || '').split(',').map((o) => o.trim()).filter(Boolean),
+  process.env.FRONTEND_URL,
   'http://localhost:3000',
   'http://localhost:3001',
-];
+].filter(Boolean);
 
 const onlineUsers = new Map();
 let io;

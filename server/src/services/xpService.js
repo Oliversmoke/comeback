@@ -137,7 +137,7 @@ export const getGroupLeaderboard = async (limit = 20) => {
   const groups = await Group.find({})
     .sort({ totalXp: -1 })
     .limit(limit)
-    .select('name coverImage members totalXp streak category');
+    .select('name coverImage memberCount totalXp streak category');
 
   const result = groups.map((g, i) => ({
     rank: i + 1,

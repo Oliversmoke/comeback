@@ -35,7 +35,7 @@ groupSchema.methods.toLeaderboardJSON = function () {
     id: this._id,
     name: this.name,
     coverImage: this.coverImage,
-    memberCount: this.members ? this.members.length : 0,
+    memberCount: this.members.length,
     totalXp: this.totalXp,
     streak: this.streak,
     category: this.category,

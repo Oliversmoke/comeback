@@ -16,7 +16,7 @@ client/android/
 client/capacitor-cordova-android-plugins/
 client/cordova-plugins/
 
-# Legacy Gradle project (old Comeback)
+# Legacy Gradle project (old RickChat)
 .gradle/
 
 # Server data (MongoDB local files)
