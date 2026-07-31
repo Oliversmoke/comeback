@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability within **StakeMind**, please report it responsibly. Do not disclose public issues for unpatched vulnerabilities.
 
-- **Email:** security@stakemind.ai
+- **Email:** security@comeback.ai
 - **Scope:** Includes Soroban smart contracts (`comeback-contract/`), Node backend services, API endpoints, wallet auth mechanisms, and client-side auth flows.
 
 ## Audit Disclaimer

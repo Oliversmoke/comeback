@@ -22,7 +22,7 @@ GOAL_STAKING_ID=$(stellar contract deploy \
   --wasm "$GOAL_STAKING_WASM" \
   --source "$ADMIN_KEY" \
   --network "$NETWORK" \
-  --rpc-url "$RPC_URL" | grep -oP 'C\w{55}')
+  --rpc-url "$RPC_URL" | grep -oE 'C[A-Za-z0-9]{55}')
 echo "GoalStakingContract: $GOAL_STAKING_ID"
 
 stellar contract invoke \
@@ -40,7 +40,7 @@ GROUP_ESCROW_ID=$(stellar contract deploy \
   --wasm "$GROUP_ESCROW_WASM" \
   --source "$ADMIN_KEY" \
   --network "$NETWORK" \
-  --rpc-url "$RPC_URL" | grep -oP 'C\w{55}')
+  --rpc-url "$RPC_URL" | grep -oE 'C[A-Za-z0-9]{55}')
 echo "GroupEscrowContract: $GROUP_ESCROW_ID"
 
 stellar contract invoke \
@@ -58,7 +58,7 @@ MILESTONE_ID=$(stellar contract deploy \
   --wasm "$MILESTONE_WASM" \
   --source "$ADMIN_KEY" \
   --network "$NETWORK" \
-  --rpc-url "$RPC_URL" | grep -oP 'C\w{55}')
+  --rpc-url "$RPC_URL" | grep -oE 'C[A-Za-z0-9]{55}')
 echo "MilestoneContract: $MILESTONE_ID"
 
 stellar contract invoke \

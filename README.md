@@ -30,23 +30,24 @@ People set goals. People break goals. Traditional productivity apps have zero sk
 ## Architecture
 
 ```
-User Browser
-    │
-    ├──→ Next.js Frontend (port 3000)
-    │       │
-    │       ├──→ Node API (Express, port 5000)
-    │       │       ├──→ Supabase (Postgres + Auth + RLS)
-    │       │       └──→ AI Providers (OpenAI / Anthropic / Gemini)
-    │       │
-    │       ├──→ Freighter Wallet (browser extension)
-    │       │       └──→ Soroban RPC
-    │       │               ├──→ GoalStakingContract
-    │       │               ├──→ GroupEscrowContract
-    │       │               └──→ MilestoneContract
-    │       │
-    │       └──→ Supabase (direct SSR reads)
-    │
-    └──→ Indexer (Soroban events → Postgres)
+┌──────────────────────────────────────────────────────────┐
+│              Next.js 15 Frontend (port 3000)              │
+│    React 19 · TS · Tailwind v4 · Zustand · Framer        │
+│    Freighter Wallet · Supabase SSR · socket.io            │
+└──────────┬───────────────────────────────┬───────────────┘
+           │ HTTP/WS                        │ direct reads
+┌──────────▼──────────────┐    ┌───────────▼───────────────┐
+│  Node API (Express)     │    │    Supabase (Postgres)     │
+│  port 5000 · Socket.io  │    │    7 tables · RLS · auth  │
+│  AI Coach · Psychology  │    │    bucket: app-files      │
+│  Goals · Groups · XP    │    └───────────────────────────┘
+└──────────┬──────────────┘
+           │
+┌──────────▼──────────────────────────────────────────────┐
+│                    Soroban RPC                           │
+│  GoalStakingContract · GroupEscrowContract · Milestone  │
+│  Event Indexer → Supabase sync                          │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ## Tech Stack
@@ -115,7 +116,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). No floats in financial math. No `unwrap(
 
 ## Security
 
-See [SECURITY.md](SECURITY.md). Smart contracts are unaudited — testnet only until formal audit completes. Report vulnerabilities to `security@stakemind.ai`.
+See [SECURITY.md](SECURITY.md). Smart contracts are unaudited — testnet only until formal audit completes. Report vulnerabilities to `security@comeback.ai`.
 
 ## License
 
