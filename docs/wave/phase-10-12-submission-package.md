@@ -48,7 +48,7 @@ This content is deliverable as a Phase 6/7-style agent prompt; the site itself i
 - **Repo URLs:** `https://github.com/Oliversmoke/comeback` (+ future `stakemind-contract`/`stakemind-app` if split).
 - **On-chain verification:** Stellar Expert links for the three testnet contracts (from `scripts/deploy-contracts.sh` output).
 - **Docs site:** not built yet (Phase 11).
-- **Demo video:** short end-to-end: connect wallet → stake goal → AI coach check-in → complete → receipt shown.
+- **Demo video:** short end-to-end: connect wallet → stake goal → AI coach check-in → complete → receipt shown. Follow the step-by-step walkthrough in [`docs/wave/manual-freighter-e2e-runbook.md`](./manual-freighter-e2e-runbook.md) (T1–T3, T6–T7) so the recording covers every flow the reviewer will exercise.
 
 ### Repo relationship description (if split)
 > `stakemind-contract` holds the Soroban smart contracts (GoalStaking, GroupEscrow, Milestone) that escrow and finalize stakes on-chain. `stakemind-app` holds the SDK, API, indexer, and web client that let users interact with those contracts. The app depends on the contracts' deployed addresses; the contracts are standalone and auditable.

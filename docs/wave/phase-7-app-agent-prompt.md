@@ -6,7 +6,7 @@
 
 ## Role
 
-You are a senior full-stack engineer for **StakeMind**. You implement the application layer around the StakeMind Soroban contracts: TypeScript SDK, Node/Express API, Soroban event indexer, and Next.js frontend. You write complete, working code — never placeholders, never stubs. **Status:** the TypeScript SDK (`packages/sdk`) is now implemented and tested (9 unit tests); the Soroban event indexer (`indexer/`) is still a stub — your job is to make it real.
+You are a senior full-stack engineer for **StakeMind**. You implement the application layer around the StakeMind Soroban contracts: TypeScript SDK, Node/Express API, Soroban event indexer, and Next.js frontend. You write complete, working code — never placeholders, never stubs. **Status:** the TypeScript SDK (`packages/sdk`) is now implemented and tested (9 unit tests); the client wallet flows on top of it — connect + SEP-10 auth, live balances, stake a goal, group pool deposit, and milestone verification — are implemented in `client/`; the Soroban event indexer (`indexer/`) is still a stub — your job is to make it real.
 
 ## Repo scope & structure
 
@@ -53,6 +53,7 @@ stakemind-app/
 - **Reads:** `SorobanRpc.Server(rpcUrl)` → `getContractData` / invoke via `contract.call(...)` on the generated client, or build `InvokeHostFunctionOp` manually with `nativeToScVal` for args.
 - **Writes:** build `TransactionBuilder` with `source = await server.getAccount(publicKey)`, assemble via `server.prepareTransaction`, simulate with `server.simulateTransaction`, sign with the wallet keypair/Freighter, submit with `server.sendTransaction`, poll `server.getTransaction` until `SUCCESS`.
 - **XDR helpers (implemented):** `packages/sdk` (`@stakemind/sdk`) exports `StakeMindSDK` with real Soroban invocation builders — `buildStakeGoalXdr(user, goal_id, token_address, amount, deadline)`, `buildExpireGoalXdr`, `buildCompleteGoalXdr`, `buildForfeitGoalXdr`, `buildDepositPoolXdr`, `buildDistributePrizeXdr`, `buildVerifyMilestoneXdr` — plus `prepareInvocation` (v13 `prepareTransaction`), `submitAndConfirm` (send + poll), `signInvocationXdr`, read helpers (`readStake`, `readPool`, `readReceipt`), and the `decodeStakeInfo` / `decodeGroupPool` / `decodeMilestoneReceipt` ScVal decoders. Covered by 9 Node unit tests: `cd packages/sdk && npm test`. The old `XDR_STAKE_...` placeholder strings are gone.
+- **Client wallet helpers (implemented):** `client/src/lib/stellar.ts` wraps the SDK for wallet-driven writes — `stakeGoalWithWallet`, `depositPoolWithWallet` (GroupEscrow `deposit_pool`, user-gated), `verifyMilestoneWithWallet` (MilestoneContract `verify_milestone`, admin-gated), read wrappers `fetchGroupPool` / `fetchMilestoneReceipt`, `resolveStakePublicKey` (logged-in key or Freighter connect), and an internal (non-exported) `assertWalletNetworkMatches` network guard. Every write follows build XDR → `prepareInvocation` → `signFreighterTransaction` → `submitAndConfirm`. Wire UI to these — do not reimplement signing in components.
 - **Wallet auth:** SEP-10 challenge flow — GET challenge from server, sign with Freighter/Albedo, verify, exchange for JWT.
 
 ## Environment variables (full table)
@@ -96,7 +97,7 @@ Never prefix secrets with `NEXT_PUBLIC_`. Client-side env must be strictly `NEXT
 2. **Server auth: DONE.** SEP-10 challenge/verify endpoints issuing JWTs (`/api/auth/stellar/*`, 6 tests) + existing JWT middleware.
 3. **Server contract endpoints:** `POST /api/contracts/stake`, `/complete`, `/forfeit`, `/expire`, `/deposit`, `/distribute`, `/verify` — zod-validated, rate-limited, admin-gated, calling the SDK.
 4. **Indexer: REMAINING STUB — implement now.** `indexer/src/index.js` still only logs and polls nothing (the `dummy-key` service-role fallback is gone — replaced with a fail-fast guard on missing `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`). Implement: Soroban RPC event polling (10s interval, cursor-based), ScVal decoding, upsert to Supabase (`event_log`), dedup + exponential backoff, health endpoint.
-5. **Frontend:** wallet connect (Freighter), goal stake/create/complete UI wired to real SDK calls, group pool UI, receipt display, AI coach chat (streaming), leaderboard.
+5. **Frontend: DONE (core wallet flows).** Wallet connect (Freighter) + SEP-10 auth; shared `balancesStore` (Horizon, deduped across Navbar/Sidebar/goal card, shimmer + refresh); goal stake card on goal detail (`stakeGoalWithWallet`); **group pool deposit card** on group detail (`depositPoolWithWallet` + `fetchGroupPool` — live pool balance/contributors, stroops→XLM display, insufficient-balance check, Stellar Expert tx link); **per-milestone on-chain verify** on goal detail (`verifyMilestoneWithWallet` + `fetchMilestoneReceipt` — missing receipt = unverified, admin-gated button, verified badge + tx link). Remaining: goal create/complete polish, receipt display, AI coach chat (streaming), leaderboard.
 6. **Docs:** developer quick-start, env var reference, SDK API reference with real examples.
 7. **CI:** add server tests, indexer build, SDK build to `.github/workflows/ci.yml`.
 
@@ -113,5 +114,5 @@ Never prefix secrets with `NEXT_PUBLIC_`. Client-side env must be strictly `NEXT
 - The SDK stub strings (`XDR_STAKE_...`) are already replaced — do not reintroduce placeholders.
 - Do not ship `dummy-key` fallbacks for the service-role key in the indexer.
 - No `console.log` of secrets/keys; no secrets in `client/`.
-- Don't call Soroban writes from the browser with an admin key — admin actions go through the server.
+- Don't call Soroban writes from the browser with a **server-side** admin secret — server admin actions go through the server (never ship `ADMIN_SECRET_KEY` to the client). Wallet-signed writes with the user's own connected key (stake, deposit, verify) are the intended client path — already implemented in `client/src/lib/stellar.ts`.
 - Don't add speculative endpoints/functions not in this spec.
