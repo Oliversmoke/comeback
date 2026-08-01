@@ -48,19 +48,19 @@ All three contracts are currently **independent** (no cross-contract calls in so
 
 **Storage:**
 - Instance: `Admin: Address`
-- Persistent: `Stake(goal_id: u64) -> StakeInfo { user: Address, token: Address, amount: i128, completed: bool, forfeited: bool }`
+- Persistent: `Stake(goal_id: u64) -> StakeInfo { user: Address, token: Address, amount: i128, deadline: u64, completed: bool, forfeited: bool }`
 
 **Functions:**
 | Function | Params | Return | Auth |
 |---|---|---|---|
 | `initialize` | `admin: Address` | — | — (panics if already initialized) |
-| `stake_goal` | `user: Address, goal_id: u64, token_address: Address, amount: i128, deadline: u64` | — | `user.require_auth()`; transfers `amount` from user to contract; panics if amount ≤ 0 or goal already staked; `deadline` enables auto-forfeit (target state, see gaps #2) |
-| `expire_goal` | `goal_id: u64` | — | anyone, when `env.ledger().timestamp() > deadline`; auto-forfeit path (target state, see gaps #2) |
+| `stake_goal` | `user: Address, goal_id: u64, token_address: Address, amount: i128, deadline: u64` | — | `user.require_auth()`; transfers `amount` from user to contract; panics if amount ≤ 0 or goal already staked; `deadline` (0 = none) enables auto-forfeit via `expire_goal` |
+| `expire_goal` | `goal_id: u64` | — | anyone, when `env.ledger().timestamp() > deadline`; auto-forfeit path — marks stake forfeited and emits `goal_expired` |
 | `complete_goal` | `admin: Address, goal_id: u64` | — | `admin.require_auth()` + equals stored admin; pays back `amount + amount/10` to user |
 | `forfeit_goal` | `admin: Address, goal_id: u64` | — | `admin.require_auth()` + equals stored admin; marks forfeited |
 | `get_stake` | `goal_id: u64` | `StakeInfo` | public read |
 
-**Events:** `("goal_staked", goal_id) -> amount`, `("goal_completed", goal_id) -> return_amount`, `("goal_forfeited", goal_id) -> amount`
+**Events:** `("goal_staked", goal_id) -> amount`, `("goal_completed", goal_id) -> return_amount`, `("goal_forfeited", goal_id) -> amount`, `("goal_expired", goal_id) -> amount`
 
 ### GroupEscrowContract — full spec (from source)
 
@@ -77,6 +77,8 @@ All three contracts are currently **independent** (no cross-contract calls in so
 | `get_pool` | `group_id: u64` | `GroupPool` | public read |
 
 **Events:** `("pool_deposit", group_id) -> amount`, `("prize_distributed", group_id) -> amount`
+
+> Note: `member_count` increments per deposit, not per unique member address (a member depositing twice counts twice). A pool is denominated in a single token — deposits in any other token are rejected (`token mismatch`).
 
 ### MilestoneContract — full spec (from source)
 
@@ -96,9 +98,9 @@ All three contracts are currently **independent** (no cross-contract calls in so
 ### Known gaps (must-fix before submission — see Phase 3 gates)
 
 1. **No reward funding source** for the +10% bonus in `complete_goal` (drains contract balance).
-2. **No deadline** in `StakeInfo` — goals can't auto-forfeit. (ISSUES.md #1, P0.)
+2. ~~No deadline in `StakeInfo` — goals can't auto-forfeit.~~ **Implemented:** `deadline` field + `expire_goal` (anyone, past deadline) + `goal_expired` event. (ISSUES.md #1, P0 — close on merge.)
 3. **Admin-trusted finalization** — all state-changing functions are admin-gated. State the trust model; multi-verifier is the upgrade path.
-4. **No tests** — none of the three `lib.rs` files contain `#[cfg(test)]` modules. (ISSUES.md #251-253, P0.)
+4. ~~No tests~~ **Implemented:** `#[cfg(test)]` integration suites for all three contracts — goal-staking (stake/complete/forfeit/expire + deadline enforcement), group-escrow (deposit/distribute/insufficient pool/auth), milestone (verify/duplicate/unauthorized/readback). (ISSUES.md #251-253, P0 — close on merge.)
 
 ### SDK + indexer spec (for the app repo)
 

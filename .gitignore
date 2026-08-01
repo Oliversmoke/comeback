@@ -30,3 +30,6 @@ joke-generator.js
 *.tsbuildinfo
 .vercel
 scripts/.bulk-issues.log
+
+# soroban-sdk test snapshot artifacts
+test_snapshots/

@@ -25,6 +25,7 @@ export interface StakeInfo {
   user: string;
   token: string;
   amount: string; // i128 as decimal string
+  deadline: string; // u64 as decimal string; 0 = no auto-forfeit
   completed: boolean;
   forfeited: boolean;
 }
@@ -254,6 +255,7 @@ export class StakeMindSDK {
       user: String(map.user ?? ''),
       token: String(map.token ?? ''),
       amount: String(map.amount ?? '0'),
+      deadline: String(map.deadline ?? '0'),
       completed: Boolean(map.completed),
       forfeited: Boolean(map.forfeited),
     };

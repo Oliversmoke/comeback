@@ -125,6 +125,7 @@ test('decoders map contract ScVal maps to plain objects', () => {
     new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol('user'), val: nativeToScVal(user.publicKey(), { type: 'address' }) }),
     new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol('token'), val: nativeToScVal(token, { type: 'address' }) }),
     new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol('amount'), val: nativeToScVal(1000000n, { type: 'i128' }) }),
+    new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol('deadline'), val: nativeToScVal(1234567890n, { type: 'u64' }) }),
     new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol('completed'), val: xdr.ScVal.scvBool(false) }),
     new xdr.ScMapEntry({ key: xdr.ScVal.scvSymbol('forfeited'), val: xdr.ScVal.scvBool(false) }),
   ]);
@@ -133,6 +134,7 @@ test('decoders map contract ScVal maps to plain objects', () => {
   assert.equal(info.user, user.publicKey());
   assert.equal(info.token, token);
   assert.equal(info.amount, '1000000');
+  assert.equal(info.deadline, '1234567890');
   assert.equal(info.completed, false);
   assert.equal(info.forfeited, false);
 });
