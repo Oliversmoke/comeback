@@ -4,13 +4,15 @@ set -e
 
 NETWORK="${STELLAR_NETWORK:-testnet}"
 RPC_URL="${STELLAR_RPC_URL:-https://soroban-testnet.stellar.org}"
-ADMIN_KEY="${STELLAR_ADMIN_SECRET}"
-ADMIN_PUBLIC_KEY="${STELLAR_ADMIN_PUBLIC_KEY}"
+ADMIN_KEY="${STELLAR_ADMIN_SECRET:-stakemind-admin}"
+ADMIN_PUBLIC_KEY="${STELLAR_ADMIN_PUBLIC_KEY:-$(stellar keys address stakemind-admin 2>/dev/null)}"
 
-if [ -z "$ADMIN_KEY" ]; then
-  echo "ERROR: STELLAR_ADMIN_SECRET not set"
+if [ -z "$ADMIN_PUBLIC_KEY" ]; then
+  echo "ERROR: no admin key available. Set STELLAR_ADMIN_SECRET or run:"
+  echo "  stellar keys generate stakemind-admin --network testnet"
   exit 1
 fi
+echo "Using admin: $ADMIN_PUBLIC_KEY (source: $ADMIN_KEY)"
 
 echo "=== Deploying StakeMind contracts to $NETWORK ==="
 
