@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Target, ArrowLeft, Clock, CheckCircle2, Trash2, Plus, HandCoins, Loader2, ExternalLink, Wallet, RefreshCw, ShieldCheck, Shield, Flag, Trophy } from 'lucide-react';
-import { goalsAPI } from '@/lib/api';
+import { goalsAPI, authAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useBalancesStore } from '@/store/balancesStore';
 import { isStakingConfigured, stakeGoalWithWallet, verifyMilestoneWithWallet, fetchMilestoneReceipt, fetchGoalStake, completeGoalWithWallet, forfeitGoalWithWallet, goalIdFromObjectId, resolveStakePublicKey, formatStellarBalance } from '@/lib/stellar';
@@ -15,10 +15,13 @@ import { getCategoryColor, getStatusColor, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import type { Goal, Milestone } from '@/types';
 
+/** XP awarded by the server for a completed goal (matches goals.js awardXp). */
+const XP_BY_PRIORITY: Record<string, number> = { critical: 100, high: 75, medium: 50, low: 25 };
+
 export default function GoalDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const walletKey = user?.stellarPublicKey;
   const walletEntry = useBalancesStore((s) => (walletKey ? s.entries[walletKey] : undefined));
   const fetchBalances = useBalancesStore((s) => s.fetch);
@@ -37,6 +40,9 @@ export default function GoalDetailPage() {
   const [stakeInfoLoading, setStakeInfoLoading] = useState(false);
   const [finalizing, setFinalizing] = useState<'complete' | 'forfeit' | null>(null);
   const [finalizeTx, setFinalizeTx] = useState<{ hash: string } | null>(null);
+  const [markingComplete, setMarkingComplete] = useState(false);
+
+  const completionXp = XP_BY_PRIORITY[goal?.priority || ''] ?? 25;
 
   useEffect(() => {
     loadGoal();
@@ -215,6 +221,29 @@ export default function GoalDetailPage() {
     }
   };
 
+  /** Mark the goal completed in the app (server awards XP by priority). */
+  const markGoalComplete = async () => {
+    if (!goal) return;
+    if (!confirm(`Mark this goal as completed? You'll earn ${completionXp} XP.`)) return;
+    setMarkingComplete(true);
+    try {
+      const { data } = await goalsAPI.update(goal._id, { status: 'completed' });
+      setGoal(data.data);
+      toast.success(`Goal completed! +${completionXp} XP`);
+      // Sync the refreshed XP/level into the auth store.
+      try {
+        const { data: profile } = await authAPI.getProfile();
+        setUser(profile.data);
+      } catch {
+        // profile refresh is best-effort — XP is still awarded server-side
+      }
+    } catch {
+      toast.error('Failed to mark goal complete');
+    } finally {
+      setMarkingComplete(false);
+    }
+  };
+
   const handleStake = async () => {
     if (!goal) return;
     const amount = Number(stakeAmount);
@@ -300,12 +329,31 @@ export default function GoalDetailPage() {
                     <p className="text-dark-400 mt-2">{goal.description}</p>
                   )}
                 </div>
-                <button
-                  onClick={deleteGoal}
-                  className="p-2 rounded-lg hover:bg-red-500/10 text-dark-400 hover:text-red-400 transition-all"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {(goal.status === 'active' || goal.status === 'paused') && (
+                    <motion.button
+                      onClick={markGoalComplete}
+                      disabled={markingComplete}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      title="Mark as completed (+XP)"
+                      className="flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-green-500/15 border border-green-500/30 text-green-300 hover:bg-green-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {markingComplete ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      )}
+                      {markingComplete ? 'Completing…' : 'Mark complete'}
+                    </motion.button>
+                  )}
+                  <button
+                    onClick={deleteGoal}
+                    className="p-2 rounded-lg hover:bg-red-500/10 text-dark-400 hover:text-red-400 transition-all"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="mb-4">

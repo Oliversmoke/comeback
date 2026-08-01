@@ -17,6 +17,7 @@ export default function NewGoalPage() {
     description: '',
     category: 'other',
     priority: 'medium',
+    targetDate: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -26,7 +27,18 @@ export default function NewGoalPage() {
 
     setSaving(true);
     try {
-      await goalsAPI.create(form);
+      // The server expects an ISO datetime; the date input gives YYYY-MM-DD.
+      // Normalize to UTC midnight so the value is deterministic across timezones.
+      const payload: Record<string, unknown> = {
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        priority: form.priority,
+      };
+      if (form.targetDate) {
+        payload.targetDate = new Date(`${form.targetDate}T00:00:00.000Z`).toISOString();
+      }
+      await goalsAPI.create(payload);
       toast.success('Goal created!');
       router.push('/goals');
     } catch {
@@ -110,6 +122,21 @@ export default function NewGoalPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-dark-200 mb-2">Target Date (optional)</label>
+                <input
+                  type="date"
+                  value={form.targetDate}
+                  onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
+                  min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0]}
+                  className="input-field"
+                />
+                <p className="text-xs text-dark-400 mt-1.5">
+                  Sets the on-chain stake deadline — miss it and the stake auto-forfeits
+                  to community challenge pools.
+                </p>
               </div>
 
               <div className="flex gap-3 pt-4">
