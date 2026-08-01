@@ -4,6 +4,7 @@
   "description": "StakeMind — AI-Powered Accountability on Stellar Soroban",
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:stack": "bash scripts/start-stack.sh",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "start": "concurrently -n server,client -c blue,green \"npm start --prefix server\" \"npm start --prefix client\"",

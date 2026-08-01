@@ -1,0 +1,44 @@
+# StakeMind — MongoDB service
+#
+# Runs the same persistent MongoDB the server expects
+# (server/.env -> MONGODB_URI=mongodb://127.0.0.1:27017/stakemind).
+#
+# Usage:
+#   docker compose up -d        # start
+#   docker compose ps           # status
+#   docker compose logs -f      # tail logs
+#   docker compose down         # stop (data is kept in the named volume)
+#   docker compose down -v      # stop AND delete the data volume (DANGER)
+#
+# NOTE: this reuses the existing named volume `stakemind-mongo-data`, so data
+# created by scripts/start-mongo.sh (or a previous compose run) is preserved.
+# If a container named `stakemind-mongo` was created with `docker run` and is
+# still running, stop/remove it first so compose can manage the name:
+#   docker stop stakemind-mongo && docker rm stakemind-mongo   # data is safe
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: stakemind-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - stakemind-mongo-data:/data/db
+    # 1g cap + 0.5g WiredTiger cache is DELIBERATE — this dev box only has
+    # ~1.7Gi available. Don't bump it without checking free memory.
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+    command: ["--wiredTigerCacheSizeGB", "0.5"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+volumes:
+  stakemind-mongo-data:
+    name: stakemind-mongo-data
