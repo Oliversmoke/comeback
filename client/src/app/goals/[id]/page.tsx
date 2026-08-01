@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Target, ArrowLeft, Clock, CheckCircle2, Trash2, Plus, HandCoins, Loader2, ExternalLink, Wallet, RefreshCw, ShieldCheck, Shield } from 'lucide-react';
+import { Target, ArrowLeft, Clock, CheckCircle2, Trash2, Plus, HandCoins, Loader2, ExternalLink, Wallet, RefreshCw, ShieldCheck, Shield, Flag, Trophy } from 'lucide-react';
 import { goalsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useBalancesStore } from '@/store/balancesStore';
-import { isStakingConfigured, stakeGoalWithWallet, verifyMilestoneWithWallet, fetchMilestoneReceipt, goalIdFromObjectId, resolveStakePublicKey, formatStellarBalance } from '@/lib/stellar';
+import { isStakingConfigured, stakeGoalWithWallet, verifyMilestoneWithWallet, fetchMilestoneReceipt, fetchGoalStake, completeGoalWithWallet, forfeitGoalWithWallet, goalIdFromObjectId, resolveStakePublicKey, formatStellarBalance } from '@/lib/stellar';
+import type { StakeInfo } from '@stakemind/sdk';
 import { isFreighterAvailable } from '@/lib/freighter';
 import { AnimatedPage, FadeIn } from '@/components/animations/MotionComponents';
 import { getCategoryColor, getStatusColor, formatDate } from '@/lib/utils';
@@ -31,6 +32,11 @@ export default function GoalDetailPage() {
   // On-chain milestone verification (MilestoneContract, admin-gated).
   const [verifiedMilestones, setVerifiedMilestones] = useState<Record<string, { timestamp: string }>>({});
   const [verifyingMilestone, setVerifyingMilestone] = useState<string | null>(null);
+  // On-chain stake lifecycle (GoalStakingContract, admin-gated finalize).
+  const [stakeInfo, setStakeInfo] = useState<StakeInfo | null>(null);
+  const [stakeInfoLoading, setStakeInfoLoading] = useState(false);
+  const [finalizing, setFinalizing] = useState<'complete' | 'forfeit' | null>(null);
+  const [finalizeTx, setFinalizeTx] = useState<{ hash: string } | null>(null);
 
   useEffect(() => {
     loadGoal();
@@ -91,6 +97,28 @@ export default function GoalDetailPage() {
     loadVerifiedMilestones();
   }, [goal?._id, walletKey]);
 
+  /**
+   * Load the goal's on-chain stake (GoalStakingContract.get_stake). A missing
+   * stake means "not staked on-chain yet" — the contract panics on reads of
+   * unstaked goals, so we treat that as unset rather than an error.
+   */
+  const loadStakeInfo = async () => {
+    if (!goal || !walletKey || !isStakingConfigured()) return;
+    setStakeInfoLoading(true);
+    try {
+      const info = await fetchGoalStake(goalIdFromObjectId(goal._id), walletKey);
+      setStakeInfo(info);
+    } catch {
+      setStakeInfo(null); // not staked on-chain yet
+    } finally {
+      setStakeInfoLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStakeInfo();
+  }, [goal?._id, walletKey]);
+
   /** Verify a milestone on-chain (MilestoneContract.verify_milestone). */
   const handleVerifyMilestone = async (milestone: Milestone) => {
     if (!goal) return;
@@ -125,6 +153,41 @@ export default function GoalDetailPage() {
       toast.error(message);
     } finally {
       setVerifyingMilestone(null);
+    }
+  };
+
+  /** Complete or forfeit the goal on-chain (GoalStakingContract, admin-gated). */
+  const handleFinalize = async (action: 'complete' | 'forfeit') => {
+    if (!goal) return;
+    setFinalizing(action);
+    try {
+      if (!isStakingConfigured()) {
+        throw new Error('On-chain finalization is not live yet — set the NEXT_PUBLIC_*_CONTRACT_ID env vars.');
+      }
+      const adminKey = await resolveStakePublicKey(user?.stellarPublicKey);
+      const { hash } =
+        action === 'complete'
+          ? await completeGoalWithWallet({ adminPublicKey: adminKey, goalId: goalIdFromObjectId(goal._id) })
+          : await forfeitGoalWithWallet({ adminPublicKey: adminKey, goalId: goalIdFromObjectId(goal._id) });
+      setFinalizeTx({ hash });
+      await loadStakeInfo();
+      if (walletKey) fetchBalances(walletKey, { force: true });
+      toast.success(
+        <span>
+          {action === 'complete'
+            ? 'Goal completed on-chain! Stake + 10% bonus returned.'
+            : 'Goal forfeited on-chain. Stake sent to community pools.'}{' '}
+          <a href={`https://stellar.expert/explorer/testnet/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="underline">
+            View tx
+          </a>
+        </span>
+      );
+    } catch (err) {
+      const message =
+        (err as any)?.response?.data?.message || (err as Error)?.message || 'Finalization failed';
+      toast.error(message);
+    } finally {
+      setFinalizing(null);
     }
   };
 
@@ -182,6 +245,7 @@ export default function GoalDetailPage() {
         deadline,
       });
       setStakeTx({ hash });
+      await loadStakeInfo();
       toast.success('Goal staked on-chain!');
     } catch (err) {
       const message =
@@ -513,6 +577,135 @@ export default function GoalDetailPage() {
                       </>
                     )}
                   </motion.button>
+                </>
+              )}
+            </div>
+          </FadeIn>
+
+          <FadeIn>
+            <div className="glass-card p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-white" />
+                </div>
+                <h3 className="font-semibold">On-chain status</h3>
+              </div>
+
+              {stakeInfoLoading ? (
+                <div className="space-y-2">
+                  <div className="skeleton h-4 w-3/4 rounded-sm" />
+                  <div className="skeleton h-4 w-1/2 rounded-sm" />
+                </div>
+              ) : !stakeInfo ? (
+                walletKey ? (
+                  <p className="text-sm text-dark-400">
+                    Not staked on-chain yet — stake this goal to lock it in the
+                    GoalStaking contract.
+                  </p>
+                ) : (
+                  <p className="text-sm text-dark-400">Connect wallet to view on-chain status.</p>
+                )
+              ) : stakeInfo.completed ? (
+                <div className="text-center py-2">
+                  <div className="inline-flex items-center gap-2 text-green-400 font-medium mb-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Completed on-chain
+                  </div>
+                  <p className="text-sm text-dark-400 mb-3">
+                    Stake + 10% bonus returned to {stakeInfo.user.slice(0, 8)}…{stakeInfo.user.slice(-4)}.
+                  </p>
+                  {finalizeTx && (
+                    <a
+                      href={`https://stellar.expert/explorer/testnet/tx/${finalizeTx.hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                    >
+                      View transaction <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              ) : stakeInfo.forfeited ? (
+                <div className="text-center py-2">
+                  <div className="inline-flex items-center gap-2 text-amber-400 font-medium mb-2">
+                    <Flag className="w-5 h-5" />
+                    Forfeited on-chain
+                  </div>
+                  <p className="text-sm text-dark-400 mb-3">
+                    The stake flowed into community challenge pools.
+                  </p>
+                  {finalizeTx && (
+                    <a
+                      href={`https://stellar.expert/explorer/testnet/tx/${finalizeTx.hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                    >
+                      View transaction <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-dark-400">Staked</span>
+                    <span className="font-medium text-emerald-400/90">
+                      {formatStellarBalance((Number(stakeInfo.amount) / 1e7).toString())} XLM
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-dark-400">Staker</span>
+                    <span className="font-mono text-xs text-dark-300">
+                      {stakeInfo.user.slice(0, 8)}…{stakeInfo.user.slice(-4)}
+                    </span>
+                  </div>
+                  {Number(stakeInfo.deadline) > 0 && (
+                    <div className="flex justify-between text-sm mb-3">
+                      <span className="text-dark-400">Deadline</span>
+                      <span className="font-medium">
+                        {formatDate(new Date(Number(stakeInfo.deadline) * 1000).toISOString())}
+                      </span>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-dark-400 mt-3 mb-3">
+                    Complete returns the stake plus a 10% bonus; forfeit sends it
+                    to community challenge pools. Both are admin-gated — the
+                    connected wallet must be the contract admin.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <motion.button
+                      onClick={() => handleFinalize('complete')}
+                      disabled={finalizing !== null || !isStakingConfigured()}
+                      whileHover={finalizing === null && isStakingConfigured() ? { scale: 1.02 } : undefined}
+                      whileTap={finalizing === null && isStakingConfigured() ? { scale: 0.98 } : undefined}
+                      title="Complete on-chain (admin-gated — requires the contract admin wallet)"
+                      className="flex items-center justify-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {finalizing === 'complete' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trophy className="w-4 h-4" />
+                      )}
+                      Complete
+                    </motion.button>
+                    <motion.button
+                      onClick={() => handleFinalize('forfeit')}
+                      disabled={finalizing !== null || !isStakingConfigured()}
+                      whileHover={finalizing === null && isStakingConfigured() ? { scale: 1.02 } : undefined}
+                      whileTap={finalizing === null && isStakingConfigured() ? { scale: 0.98 } : undefined}
+                      title="Forfeit on-chain (admin-gated — requires the contract admin wallet)"
+                      className="flex items-center justify-center gap-1.5 text-sm px-3 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 hover:bg-red-500/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {finalizing === 'forfeit' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Flag className="w-4 h-4" />
+                      )}
+                      Forfeit
+                    </motion.button>
+                  </div>
                 </>
               )}
             </div>

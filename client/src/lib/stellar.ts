@@ -3,7 +3,7 @@
  * Builds the SDK from NEXT_PUBLIC_* env vars and drives the wallet stake flow
  * (build XDR → simulate via RPC → sign in Freighter → submit & confirm).
  */
-import { StakeMindSDK, type StakeMindSDKConfig, type GroupPool, type MilestoneReceipt } from '@stakemind/sdk';
+import { StakeMindSDK, type StakeMindSDKConfig, type GroupPool, type MilestoneReceipt, type StakeInfo } from '@stakemind/sdk';
 import { connectFreighter, signFreighterTransaction, getFreighterNetwork } from '@/lib/freighter';
 
 export const TESTNET_PASSPHRASE = 'Test SDF Network ; September 2015';
@@ -200,6 +200,55 @@ export const fetchMilestoneReceipt = async (
 ): Promise<MilestoneReceipt> => {
   const sdk = getStakeMindSDK();
   return sdk.readReceipt(goalId, milestoneId, source);
+};
+
+export interface FinalizeGoalParams {
+  adminPublicKey: string;
+  goalId: number;
+}
+
+/**
+ * Full wallet flow for GoalStakingContract.complete_goal — admin-gated
+ * on-chain: only the contract's stored admin can finalize. Marks the goal
+ * completed and returns the stake plus a 10% reward bonus to the staker.
+ */
+export const completeGoalWithWallet = async (params: FinalizeGoalParams): Promise<StakeResult> => {
+  const sdk = getStakeMindSDK();
+
+  await assertWalletNetworkMatches(sdk);
+
+  const xdr = sdk.buildCompleteGoalXdr(params.adminPublicKey, params.goalId);
+  const prepared = await sdk.prepareInvocation(params.adminPublicKey, xdr);
+  const signed = await signFreighterTransaction(prepared, sdk.getNetworkPassphrase());
+  const result = await sdk.submitAndConfirm(signed);
+  return { hash: result.hash, result: result.result };
+};
+
+/**
+ * Full wallet flow for GoalStakingContract.forfeit_goal — admin-gated
+ * on-chain. Marks the goal forfeited; the stake flows to the community
+ * challenge pools (contract balance).
+ */
+export const forfeitGoalWithWallet = async (params: FinalizeGoalParams): Promise<StakeResult> => {
+  const sdk = getStakeMindSDK();
+
+  await assertWalletNetworkMatches(sdk);
+
+  const xdr = sdk.buildForfeitGoalXdr(params.adminPublicKey, params.goalId);
+  const prepared = await sdk.prepareInvocation(params.adminPublicKey, xdr);
+  const signed = await signFreighterTransaction(prepared, sdk.getNetworkPassphrase());
+  const result = await sdk.submitAndConfirm(signed);
+  return { hash: result.hash, result: result.result };
+};
+
+/**
+ * Read a goal's on-chain stake (GoalStakingContract.get_stake). Throws when
+ * the goal has never been staked (get_stake panics on-chain) — callers
+ * should treat that as "not staked yet".
+ */
+export const fetchGoalStake = async (goalId: number, source: string): Promise<StakeInfo> => {
+  const sdk = getStakeMindSDK();
+  return sdk.readStake(goalId, source);
 };
 
 export interface StellarBalances {
