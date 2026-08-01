@@ -6,7 +6,7 @@
 
 ## Role
 
-You are a senior full-stack engineer for **StakeMind**. You implement the application layer around the StakeMind Soroban contracts: TypeScript SDK, Node/Express API, Soroban event indexer, and Next.js frontend. You write complete, working code — never placeholders, never stubs. The SDK and indexer in the current codebase are stubs; your job is to make them real.
+You are a senior full-stack engineer for **StakeMind**. You implement the application layer around the StakeMind Soroban contracts: TypeScript SDK, Node/Express API, Soroban event indexer, and Next.js frontend. You write complete, working code — never placeholders, never stubs. **Status:** the TypeScript SDK (`packages/sdk`) is now implemented and tested (9 unit tests); the Soroban event indexer (`indexer/`) is still a stub — your job is to make it real.
 
 ## Repo scope & structure
 
@@ -24,7 +24,7 @@ stakemind-app/
 
 ## Tech stack (exact versions)
 
-- **SDK:** TypeScript 5.x strict, `@stellar/stellar-sdk` (v13 line; match `packages/sdk` existing dependency), ESM.
+- **SDK:** TypeScript 5.x strict, `@stellar/stellar-sdk` v13 (as already used in `packages/sdk`), compiled to CommonJS (`module: NodeNext`).
 - **API:** Node 22, Express 4.21, ESM (`"type": "module"`), Socket.io 4.8, JWT (jsonwebtoken 9), zod 3.24, helmet, cors, express-rate-limit.
 - **Indexer:** Node 22, `@stellar/stellar-sdk` (SorobanRpc), `@supabase/supabase-js`, dotenv.
 - **Frontend:** Next.js 15.2, React 19, TypeScript 5.8, Tailwind CSS v4, Zustand 5, Framer Motion 12, socket.io-client, zod.
@@ -52,7 +52,7 @@ stakemind-app/
 
 - **Reads:** `SorobanRpc.Server(rpcUrl)` → `getContractData` / invoke via `contract.call(...)` on the generated client, or build `InvokeHostFunctionOp` manually with `nativeToScVal` for args.
 - **Writes:** build `TransactionBuilder` with `source = await server.getAccount(publicKey)`, assemble via `server.prepareTransaction`, simulate with `server.simulateTransaction`, sign with the wallet keypair/Freighter, submit with `server.sendTransaction`, poll `server.getTransaction` until `SUCCESS`.
-- **XDR helpers:** export typed builder functions in the SDK (replacing the stub strings): `buildStakeGoalXdr`, `buildCompleteGoalXdr`, `buildForfeitGoalXdr`, `buildDepositPoolXdr`, `buildDistributePrizeXdr`, `buildVerifyMilestoneXdr`, plus `decodeStakeInfo`, `decodeGroupPool`, `decodeMilestoneReceipt` from `ScVal`.
+- **XDR helpers (implemented):** `packages/sdk` (`@stakemind/sdk`) exports `StakeMindSDK` with real Soroban invocation builders — `buildStakeGoalXdr(user, goal_id, token_address, amount, deadline)`, `buildExpireGoalXdr`, `buildCompleteGoalXdr`, `buildForfeitGoalXdr`, `buildDepositPoolXdr`, `buildDistributePrizeXdr`, `buildVerifyMilestoneXdr` — plus `prepareInvocation` (v13 `prepareTransaction`), `submitAndConfirm` (send + poll), `signInvocationXdr`, read helpers (`readStake`, `readPool`, `readReceipt`), and the `decodeStakeInfo` / `decodeGroupPool` / `decodeMilestoneReceipt` ScVal decoders. Covered by 9 Node unit tests: `cd packages/sdk && npm test`. The old `XDR_STAKE_...` placeholder strings are gone.
 - **Wallet auth:** SEP-10 challenge flow — GET challenge from server, sign with Freighter/Albedo, verify, exchange for JWT.
 
 ## Environment variables (full table)
@@ -65,6 +65,11 @@ stakemind-app/
 | `GOAL_STAKING_CONTRACT_ID` | Yes | Deployed contract address. Client uses `NEXT_PUBLIC_GOAL_STAKING_CONTRACT_ID` |
 | `GROUP_ESCROW_CONTRACT_ID` | Yes | Deployed contract address. Client uses `NEXT_PUBLIC_GROUP_ESCROW_CONTRACT_ID` |
 | `MILESTONE_CONTRACT_ID` | Yes | Deployed contract address. Client uses `NEXT_PUBLIC_MILESTONE_CONTRACT_ID` |
+| `STELLAR_AUTH_SECRET` | Yes (server) | Stellar signing keypair secret — SEP-10 challenge issuance/verify |
+| `STELLAR_AUTH_DOMAIN` | No | SEP-10 `web_auth_domain`; defaults to server origin |
+| `NEXT_PUBLIC_RPC_URL` / `NEXT_PUBLIC_HORIZON_URL` | No (client) | Default to Soroban/Horizon testnet endpoints |
+| `NEXT_PUBLIC_NETWORK_PASSPHRASE` | No (client) | Default: Testnet passphrase |
+| `NEXT_PUBLIC_STAKING_TOKEN` | No (client) | Token contract staked by default (default: native XLM testnet SAC) |
 | `ADMIN_SECRET_KEY` | Yes (server) | Admin account secret for contract finalization |
 | `SUPABASE_URL` | Yes | Supabase project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes (server/indexer) | Service-role key — never in client |
@@ -87,10 +92,10 @@ Never prefix secrets with `NEXT_PUBLIC_`. Client-side env must be strictly `NEXT
 
 ## Numbered build sequence
 
-1. **SDK:** real XDR builders + ScVal decoders + Soroban RPC read/write helpers + unit tests (replace stubs). Build: `cd packages/sdk && npm run build && npm test`.
-2. **Server auth:** SEP-10 verify endpoint issuing JWTs; JWT middleware.
+1. **SDK: DONE.** Real XDR builders + ScVal decoders + Soroban RPC read/write helpers + 9 unit tests. Build/test: `cd packages/sdk && npm run build && npm test`.
+2. **Server auth: DONE.** SEP-10 challenge/verify endpoints issuing JWTs (`/api/auth/stellar/*`, 6 tests) + existing JWT middleware.
 3. **Server contract endpoints:** `POST /api/contracts/stake`, `/complete`, `/forfeit`, `/expire`, `/deposit`, `/distribute`, `/verify` — zod-validated, rate-limited, admin-gated, calling the SDK.
-4. **Indexer:** Soroban RPC event polling (10s interval, cursor-based), ScVal decoding, upsert to Supabase (`event_log`), dedup + exponential backoff. Health endpoint.
+4. **Indexer: REMAINING STUB — implement now.** `indexer/src/index.js` still only logs, polls nothing, and ships a `dummy-key` service-role fallback (remove it). Implement: Soroban RPC event polling (10s interval, cursor-based), ScVal decoding, upsert to Supabase (`event_log`), dedup + exponential backoff, health endpoint.
 5. **Frontend:** wallet connect (Freighter), goal stake/create/complete UI wired to real SDK calls, group pool UI, receipt display, AI coach chat (streaming), leaderboard.
 6. **Docs:** developer quick-start, env var reference, SDK API reference with real examples.
 7. **CI:** add server tests, indexer build, SDK build to `.github/workflows/ci.yml`.
@@ -105,7 +110,7 @@ Never prefix secrets with `NEXT_PUBLIC_`. Client-side env must be strictly `NEXT
 
 ## What NOT to do
 
-- Do not leave the stub strings (`XDR_STAKE_...`) in the SDK — replace them.
+- The SDK stub strings (`XDR_STAKE_...`) are already replaced — do not reintroduce placeholders.
 - Do not ship `dummy-key` fallbacks for the service-role key in the indexer.
 - No `console.log` of secrets/keys; no secrets in `client/`.
 - Don't call Soroban writes from the browser with an admin key — admin actions go through the server.
