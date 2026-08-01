@@ -26,7 +26,7 @@ export function validateFile(file) {
   }
 }
 
-export async function uploadImage(file, folder = 'comeback-ai') {
+export async function uploadImage(file, folder = 'stakemind') {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -61,13 +61,13 @@ export async function deleteImage(publicId) {
 }
 
 export async function uploadAvatar(file, userId) {
-  return uploadImage(file, `comeback-ai/avatars/${userId}`);
+  return uploadImage(file, `stakemind/avatars/${userId}`);
 }
 
 export async function uploadProofImage(file, taskId) {
-  return uploadImage(file, `comeback-ai/proofs/${taskId}`);
+  return uploadImage(file, `stakemind/proofs/${taskId}`);
 }
 
 export async function uploadAttachment(file, conversationId) {
-  return uploadImage(file, `comeback-ai/attachments/${conversationId}`);
+  return uploadImage(file, `stakemind/attachments/${conversationId}`);
 }

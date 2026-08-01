@@ -26,7 +26,7 @@ export const options = {
 };
 
 const users = Array.from({ length: 100 }, (_, i) => ({
-  email: `loadtest${i}@rickchat.ai`,
+  email: `loadtest${i}@stakemind.ai`,
   password: 'TestP@ss123',
   username: `loaduser${i}`,
 }));

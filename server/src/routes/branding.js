@@ -24,7 +24,7 @@ router.get('/', catchAsync(async (req, res) => {
 router.post('/logo', authenticate, upload.single('image'), catchAsync(async (req, res) => {
   if (!req.file) throw new AppError('No image file provided', 400, 'NO_FILE');
 
-  const result = await uploadImage(req.file, 'comeback-ai/branding');
+  const result = await uploadImage(req.file, 'stakemind/branding');
 
   const branding = await getBranding();
   if (branding.logo.publicId) {
@@ -41,7 +41,7 @@ router.post('/logo', authenticate, upload.single('image'), catchAsync(async (req
 router.post('/background', authenticate, upload.single('image'), catchAsync(async (req, res) => {
   if (!req.file) throw new AppError('No image file provided', 400, 'NO_FILE');
 
-  const result = await uploadImage(req.file, 'comeback-ai/branding');
+  const result = await uploadImage(req.file, 'stakemind/branding');
 
   const branding = await getBranding();
   if (branding.background.publicId) {

@@ -17,7 +17,7 @@ echo "=== Deploying StakeMind contracts to $NETWORK ==="
 # 1. Goal Staking (no dependencies)
 echo ""
 echo "--- [1/3] Goal Staking ---"
-GOAL_STAKING_WASM="comeback-contract/target/wasm32-unknown-unknown/release/goal_staking.wasm"
+GOAL_STAKING_WASM="comeback-contract/target/wasm32-unknown-unknown/release/stakemind_goal_staking.wasm"
 GOAL_STAKING_ID=$(stellar contract deploy \
   --wasm "$GOAL_STAKING_WASM" \
   --source "$ADMIN_KEY" \
@@ -35,7 +35,7 @@ stellar contract invoke \
 # 2. Group Escrow (receives forfeited stakes from GoalStaking)
 echo ""
 echo "--- [2/3] Group Escrow ---"
-GROUP_ESCROW_WASM="comeback-contract/target/wasm32-unknown-unknown/release/group_escrow.wasm"
+GROUP_ESCROW_WASM="comeback-contract/target/wasm32-unknown-unknown/release/stakemind_group_escrow.wasm"
 GROUP_ESCROW_ID=$(stellar contract deploy \
   --wasm "$GROUP_ESCROW_WASM" \
   --source "$ADMIN_KEY" \
@@ -53,7 +53,7 @@ stellar contract invoke \
 # 3. Milestone (independent)
 echo ""
 echo "--- [3/3] Milestone ---"
-MILESTONE_WASM="comeback-contract/target/wasm32-unknown-unknown/release/milestone.wasm"
+MILESTONE_WASM="comeback-contract/target/wasm32-unknown-unknown/release/stakemind_milestone.wasm"
 MILESTONE_ID=$(stellar contract deploy \
   --wasm "$MILESTONE_WASM" \
   --source "$ADMIN_KEY" \

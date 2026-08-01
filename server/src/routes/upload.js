@@ -67,7 +67,7 @@ router.post('/group-cover/:groupId', authenticate, upload.single('image'), catch
     return res.status(404).json({ success: false, message: 'Group not found or access denied' });
   }
 
-  const result = await uploadImage(req.file, `comeback-ai/groups/${req.params.groupId}`);
+  const result = await uploadImage(req.file, `stakemind/groups/${req.params.groupId}`);
   group.coverImage = result.url;
   await group.save();
 

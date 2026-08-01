@@ -102,5 +102,5 @@ All three contracts are currently **independent** (no cross-contract calls in so
 
 ### SDK + indexer spec (for the app repo)
 
-- **SDK** (`packages/sdk`): `ComebackSDK` class with `buildStakeGoalXdr` / `buildVerifyMilestoneXdr` — currently **placeholder strings**, must be replaced with real Soroban RPC invocation builders (`@stellar/stellar-sdk`, `AssembledTransaction`, XDR encoding). (ISSUES.md #51, P0.)
+- **SDK** (`packages/sdk`): `StakeMindSDK` class with real Soroban invocation XDR builders (`buildStakeGoalXdr`, `buildVerifyMilestoneXdr`, `prepareInvocation`, `submitAndConfirm`) — implemented and tested (9 unit tests) since commit `e4c8514`. (ISSUES.md #51, P0 — now closed.)
 - **Indexer** (`indexer/`): currently a stub (`setInterval(pollEvents, 10000)` that does nothing) — must implement real RPC event polling, ScVal decoding, and Supabase sync. (ISSUES.md #191-193, P0.)

@@ -1,4 +1,4 @@
-const CACHE = 'rickchat-v1';
+const CACHE = 'stakemind-v1';
 const ASSETS = [
   '/',
   '/manifest.json',

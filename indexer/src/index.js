@@ -15,7 +15,7 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function pollEvents() {
-  console.log('Comeback Soroban Indexer running... polling testnet events.');
+  console.log('StakeMind Soroban Indexer running... polling testnet events.');
   // Poll Horizon / Soroban RPC for contract events and sync to Postgres
 }
 

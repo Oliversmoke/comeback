@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'ai.rickchat.app',
-  appName: 'comeback.AI',
+  appId: 'ai.stakemind.app',
+  appName: 'StakeMind',
   webDir: 'out',
   server: {
     androidScheme: 'https',

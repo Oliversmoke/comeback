@@ -116,7 +116,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). No floats in financial math. No `unwrap(
 
 ## Security
 
-See [SECURITY.md](SECURITY.md). Smart contracts are unaudited — testnet only until formal audit completes. Report vulnerabilities to `security@comeback.ai`.
+See [SECURITY.md](SECURITY.md). Smart contracts are unaudited — testnet only until formal audit completes. Report vulnerabilities to `security@stakemind.ai`.
 
 ## License
 

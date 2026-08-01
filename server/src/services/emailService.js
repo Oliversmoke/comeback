@@ -40,7 +40,7 @@ export const sendEmail = async ({ to, subject, html }) => {
   try {
     const t = await getTransporter();
     const info = await t.sendMail({
-      from: `"comeback.AI Backup" <${process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@comeback.ai'}>`,
+      from: `"StakeMind Backup" <${process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@stakemind.ai'}>`,
       to,
       subject,
       html,
@@ -80,9 +80,9 @@ export const notifyNewRegistration = async (user) => {
 export const sendBackupReport = async (data) => {
   const date = new Date().toLocaleDateString();
   const html = `
-    <h2>comeback.AI Backup Report — ${date}</h2>
+    <h2>StakeMind Backup Report — ${date}</h2>
     <pre style="background:#f5f5f5;padding:16px;border-radius:8px;font-size:13px;overflow-x:auto;">${JSON.stringify(data, null, 2)}</pre>
-    <p style="color:#666;font-size:12px;">Generated automatically by comeback.AI backup system.</p>
+    <p style="color:#666;font-size:12px;">Generated automatically by StakeMind backup system.</p>
   `;
   return notifyOwner(`Backup Report — ${date}`, html);
 };
@@ -91,7 +91,7 @@ export const sendLogDump = async (logs) => {
   const date = new Date().toLocaleDateString();
   const logText = logs.map((l) => `[${l.timestamp || new Date().toISOString()}] ${l.level || 'INFO'}: ${l.message}`).join('\n');
   const html = `
-    <h2>comeback.AI Activity Logs — ${date}</h2>
+    <h2>StakeMind Activity Logs — ${date}</h2>
     <pre style="background:#1e1e1e;color:#d4d4d4;padding:16px;border-radius:8px;font-size:12px;overflow-x:auto;max-height:600px;">${logText}</pre>
   `;
   return notifyOwner(`Activity Logs — ${date}`, html);
@@ -106,5 +106,5 @@ export const sendPasswordReset = async (user, resetToken) => {
     <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#6366f1;color:#fff;text-decoration:none;border-radius:8px;margin:16px 0;">Reset Password</a>
     <p style="color:#666;font-size:12px;">If you didn't request this, you can ignore this email.</p>
   `;
-  return sendEmail({ to: user.email, subject: 'Password Reset — comeback.AI', html });
+  return sendEmail({ to: user.email, subject: 'Password Reset — StakeMind', html });
 };

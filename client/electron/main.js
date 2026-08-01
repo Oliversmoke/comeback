@@ -1,4 +1,4 @@
-// Electron desktop wrapper for comeback.AI.
+// Electron desktop wrapper for StakeMind.
 //
 // Launches the unified server (Next.js pages + API + Socket.IO) as a child
 // Node process, waits for it to accept connections, then opens a window to it.

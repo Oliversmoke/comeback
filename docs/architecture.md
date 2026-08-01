@@ -1,71 +1,58 @@
-# RickChat Architecture
+# StakeMind Architecture
 
 ## Overview
 
-RickChat is a multi-service backend platform powering an AI Operating System with 18 microservices, each handling a specific domain. The architecture follows a distributed monolith pattern with an API Gateway providing unified access.
+StakeMind is a blockchain-backed accountability platform that puts real money behind personal goals. Users stake XLM or USDC via Stellar Soroban smart contracts; hit the deadline and you get your stake back plus a funded bonus, miss it and the stake flows into community challenge pools. An AI coach drives accountability and every milestone produces a verifiable on-chain receipt.
+
+The stack is deliberately small: a TypeScript SDK, a Node/Express API, a Soroban event indexer, and a Next.js web client — with a separate Rust workspace for the Soroban contracts.
+
+## Components
+
+| Component | Path | Role |
+|---|---|---|
+| **Soroban contracts** | `comeback-contract/` | Rust workspace: `goal-staking`, `group-escrow`, `milestone` |
+| **TypeScript SDK** | `packages/sdk/` | Real Soroban invocation XDR builders + decoders (`@stakemind/sdk`) |
+| **API server** | `server/` | Node/Express: auth (JWT + SEP-10 wallet auth), goals, Supabase data layer |
+| **Indexer** | `indexer/` | Soroban RPC event polling → Supabase Postgres sync |
+| **Web client** | `client/` | Next.js 14 App Router frontend (wallet connect, staking UI, AI coach) |
+| **Database** | Supabase | PostgreSQL + storage (avatars, proofs, attachments) |
 
 ## Architecture Diagram
 
 ```
-                                    ┌──────────────┐
-                                    │   Firebase    │
-                                    │  Auth / FCM   │
-                                    └──────┬───────┘
-                                           │
-┌──────────┐    ┌──────────────────────────────────────────────┐
-│  Client   │────▶          API Gateway (8080)                  │
-│  (App/    │    │   Rate Limit │ JWT Auth │ CORS │ Routing    │
-│   Web)    │    └──────┬──────┬──────┬──────┬──────┬────────┘
-└──────────┘           │      │      │      │      │
-                       │      │      │      │      │
-         ┌─────────────┘ ┌────┘ ┌────┘ ┌────┘ ┌────┘
-         ▼               ▼      ▼      ▼      ▼
-    ┌─────────┐   ┌─────────┐ ┌────┐ ┌────┐ ┌────┐
-    │ Auth    │   │ Chat    │ │ AI │ │Mem │ │... │
-    │ 8081    │   │ 8083    │ │8084│ │8085│ │    │
-    └────┬────┘   └────┬────┘ └──┬─┘ └──┬─┘ └────┘
-         │             │         │      │
-         ▼             ▼         ▼      ▼
-    ┌──────────────────────────────────────────┐
-    │         PostgreSQL (pgvector)             │
-    │   users │ chats │ memory │ marketplace    │
-    │   courses │ payments │ analytics...       │
-    └──────────────────────────────────────────┘
-         │             │         │      │
-         ▼             ▼         ▼      ▼
-    ┌──────────────────────────────────────────┐
-    │              Redis                        │
-    │   Cache │ Sessions │ Rate Limits │ Queue  │
-    └──────────────────────────────────────────┘
-         │
-         ▼
-    ┌──────────────────────────────────────────┐
-    │            Qdrant                         │
-    │   Vector Index │ Semantic Search          │
-    └──────────────────────────────────────────┘
+┌──────────────┐        ┌──────────────────┐        ┌─────────────────┐
+│  Web client   │───────▶│    API server     │──────▶│     Supabase    │
+│   (Next.js)   │ REST   │   (Node/Express)  │  SQL  │   (PostgreSQL)  │
+└──────┬───────┘        └────────┬─────────┘        └─────────────────┘
+       │                         │
+       │  Freighter (SEP-10)     │  Soroban RPC
+       ▼                         ▼
+┌─────────────────────┐   ┌──────────────────┐
+│  Stellar network    │   │     Indexer      │
+│  (testnet/mainnet)  │   │  (event poller)  │
+│  Soroban contracts  │◀──┘       │           │
+└─────────────────────┘           ▼           │
+                          ┌─────────────────┐ │
+                          │     Supabase    │◀┘ (upsert events)
+                          │   event_log     │
+                          └─────────────────┘
 ```
+
+- **Writes** (stake, complete, forfeit, deposit, distribute, verify): the client builds transactions with the SDK and signs via Freighter, submitting directly to Soroban RPC.
+- **Reads** (balances, goal state, receipts): via Horizon / Soroban RPC and the API server.
+- **Events**: the indexer polls the RPC for contract events (10s interval, cursor-based) and upserts them to Supabase.
 
 ## Data Flow
 
-1. **Client Request** → API Gateway authenticates JWT, applies rate limits, proxies to service
-2. **Service** → Processes request, reads/writes PostgreSQL via Exposed ORM + raw SQL
-3. **Memory Operations** → Embedding generated via AI Gateway → Stored in Qdrant + PostgreSQL
-4. **Chat Messages** → Sent via WebSocket → Redis pub/sub → Broadcast to room participants
-5. **Background Jobs** → Published to PubSub → Consumed by worker services
-6. **Analytics** → Events tracked asynchronously → Aggregated for dashboards
+1. **Wallet auth** — client connects Freighter, completes SEP-10 challenge against the API, receives JWT.
+2. **Stake a goal** — SDK builds the `stake_goal` invocation XDR → user signs in Freighter → submitted to Soroban RPC.
+3. **Goal lifecycle** — `goal_staked` / `milestone_verified` / `goal_completed` / `goal_forfeited` events are emitted by the contracts and picked up by the indexer.
+4. **State sync** — the indexer decodes ScVal events and upserts them to Supabase, keeping the API's view consistent with on-chain state.
+5. **AI coach** — the API proxies conversational requests to the AI provider, using goal/milestone context from Supabase.
 
 ## Key Design Decisions
 
-- **Synchronous API** for CRUD operations (REST/JSON)
-- **WebSockets** for real-time chat and collaboration
-- **Server-Sent Events** for AI streaming responses
-- **CQRS** pattern for analytics (separate write/read paths)
-- **Event Sourcing** via PubSub for cross-service communication
-- **Polyglot Persistence**: PostgreSQL (relational), Qdrant (vectors), Redis (cache), Firestore (real-time sync)
-- **Circuit Breaker** pattern for AI provider calls (failover between OpenAI/Gemini/Anthropic)
-
-## Service Communication
-
-- **Synchronous**: HTTP REST between API Gateway and services
-- **Asynchronous**: PubSub messages for background tasks
-- **Real-time**: WebSocket connections managed by Chat Service
+- **Client-side XDR assembly** — the SDK builds invocation XDR with `@stellar/stellar-sdk` v13 (prepare/assemble/`submitAndConfirm`), so the client can submit directly without a backend for signing.
+- **SEP-10 authentication** — wallet-verified identity is the primary auth path; email+password remains for legacy users.
+- **Separation of contracts and app** — the Rust contracts are a standalone, auditable workspace; the app layer depends only on deployed contract addresses.
+- **Polyglot persistence** — Postgres (relational state), Supabase Storage (files), on-chain (escrowed value + receipts).

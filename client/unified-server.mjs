@@ -1,4 +1,4 @@
-// Unified single server for comeback.AI.
+// Unified single server for StakeMind.
 //
 // Serves the Next.js pages AND the Express API AND the Socket.IO websocket
 // from ONE Node process on ONE port. This removes the need to run the client
@@ -61,7 +61,7 @@ await nextApp.prepare();
 await initializeServices(server);
 
 server.listen(port, () => {
-  console.log(`\n🚀 comeback.AI Unified Server`);
+  console.log(`\n🚀 StakeMind Unified Server`);
   console.log(`📡 Port: ${port}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 URL: http://localhost:${port}`);

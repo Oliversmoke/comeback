@@ -4,13 +4,13 @@ import { Providers } from './providers';
 import { ThemeScript } from './theme-script';
 
 export const metadata: Metadata = {
-  title: 'comeback.AI - Social Productivity',
+  title: 'StakeMind - Social Productivity',
   description: 'Achieve your goals with AI-powered coaching and social accountability',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'comeback.AI',
+    title: 'StakeMind',
   },
   icons: {
     icon: '/icons/icon.svg',

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 comeback.ai Development Environment"
+echo "🚀 StakeMind Development Environment"
 echo "======================================"
 
 # Check for MongoDB

@@ -16,7 +16,7 @@ client/android/
 client/capacitor-cordova-android-plugins/
 client/cordova-plugins/
 
-# Legacy Gradle project (old RickChat)
+# Legacy Gradle project (removed)
 .gradle/
 
 # Rust / Soroban contract build artifacts
@@ -29,3 +29,4 @@ server/data/
 joke-generator.js
 *.tsbuildinfo
 .vercel
+scripts/.bulk-issues.log

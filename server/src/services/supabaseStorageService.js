@@ -43,7 +43,7 @@ export function validateFile(file) {
   }
 }
 
-export const uploadImage = async (file, folder = 'comeback-ai') => {
+export const uploadImage = async (file, folder = 'stakemind') => {
   await readyBucket();
   const ext = EXT_BY_TYPE[file.mimetype] || 'bin';
   const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -76,13 +76,13 @@ export const deleteImage = async (identifier) => {
 };
 
 export const uploadAvatar = (file, userId) =>
-  uploadImage(file, `comeback-ai/avatars/${userId}`);
+  uploadImage(file, `stakemind/avatars/${userId}`);
 
 export const uploadProofImage = (file, taskId) =>
-  uploadImage(file, `comeback-ai/proofs/${taskId}`);
+  uploadImage(file, `stakemind/proofs/${taskId}`);
 
 export const uploadAttachment = (file, conversationId) =>
-  uploadImage(file, `comeback-ai/attachments/${conversationId}`);
+  uploadImage(file, `stakemind/attachments/${conversationId}`);
 
 export default {
   validateFile,

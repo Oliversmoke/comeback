@@ -24,7 +24,7 @@ const plans: Plan[] = [
   {
     id: 'free',
     name: 'Starter',
-    tagline: 'Everything you need to begin the comeback.',
+    tagline: 'Everything you need to stake on your goals.',
     icon: Zap,
     monthly: 0,
     yearly: 0,
@@ -90,7 +90,7 @@ export default function PricingPage() {
             <Crown className="w-3.5 h-3.5" />
             Eternal Membership
           </div>
-          <h1 className="page-header">Invest in your comeback</h1>
+          <h1 className="page-header">Invest in your goals</h1>
           <p className="page-subtitle mt-2">
             Choose the plan that keeps you consistent. Cancel anytime.
           </p>

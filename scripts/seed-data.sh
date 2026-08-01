@@ -1,20 +1,20 @@
 #!/bin/bash
-# MongoDB seed script for comeback.AI
+# MongoDB seed script for StakeMind
 # Usage: bash scripts/seed-data.sh
 # Requires mongosh available and MONGODB_URI set
 
 set -e
 
-MONGODB_URI=${MONGODB_URI:-"mongodb://localhost:27017/comebackai"}
+MONGODB_URI=${MONGODB_URI:-"mongodb://localhost:27017/stakemind"}
 
-echo "Seeding comeback.ai database at $MONGODB_URI ..."
+echo "Seeding stakemind.ai database at $MONGODB_URI ..."
 
 mongosh "$MONGODB_URI" <<'EOF'
 const now = new Date();
 
 // Create demo user (password: Demo1234)
 const demoUser = db.users.insertOne({
-  email: "demo@comeback.ai",
+  email: "demo@stakemind.ai",
   username: "demo_user",
   displayName: "Demo User",
   password: "$2a$12$LJ3m4ys3Lg3YOCwKkOvCYuG4YqF6YH1wO5n7q0pV1e2r3t4y5u6i7",
@@ -131,7 +131,7 @@ db.users.updateOne(
 );
 
 print("✅ Seed complete!");
-print("   Demo user: demo@comeback.ai / Demo1234");
+print("   Demo user: demo@stakemind.ai / Demo1234");
 print("   Goals created: " + goals.insertedIds.length);
 print("   Tasks created: " + tasks.insertedIds.length);
 print("   Group created: " + group.insertedId);

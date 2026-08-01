@@ -1,5 +1,5 @@
 {
-  "name": "productivity-social-server",
+  "name": "stakemind-server",
   "version": "1.0.0",
   "description": "Backend for Productivity Social Web App",
   "main": "src/server.js",
