@@ -18,7 +18,6 @@ import {
 import { getOrCreateMemory, getMemorySummary } from '../services/aiMemoryService.js';
 import { analyzeUserPatterns, getAdaptationReport, runLearningCycle, generateAdaptiveInsight } from '../services/adaptiveLearningEngine.js';
 import User from '../models/User.js';
-import Goal from '../models/Goal.js';
 
 const router = Router();
 router.use(authenticate);
@@ -98,7 +97,6 @@ router.post('/recovery-plan', catchAsync(async (req, res) => {
 }));
 
 router.get('/challenge', catchAsync(async (req, res) => {
-  const user = await User.findById(req.user.id);
   const memory = await getMemorySummary(req.user.id).catch(() => null);
   const preference = memory?.personality?.challengePreference || 'moderate';
   const challenge = generateChallenge(preference);

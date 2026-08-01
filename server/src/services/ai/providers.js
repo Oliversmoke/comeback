@@ -182,7 +182,7 @@ class FallbackProvider {
     return items[Math.floor(Math.random() * items.length)];
   }
 
-  async chat(messages, options = {}) {
+  async chat(messages, _options = {}) {
     const lastMsg = messages[messages.length - 1]?.content || '';
     const allText = messages.map((m) => m.content || '').join(' ');
     const ctx = this._extractUserContext(messages);

@@ -1,7 +1,6 @@
 import UserMemory from '../models/UserMemory.js';
 import UserInsight from '../models/UserInsight.js';
 import UserActivity from '../models/UserActivity.js';
-import Goal from '../models/Goal.js';
 import Task from '../models/Task.js';
 
 const ADAPTATION_THRESHOLDS = {

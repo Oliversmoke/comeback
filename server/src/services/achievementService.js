@@ -2,7 +2,6 @@ import Achievement from '../models/Achievement.js';
 import Task from '../models/Task.js';
 import Goal from '../models/Goal.js';
 import User from '../models/User.js';
-import XpTransaction from '../models/XpTransaction.js';
 import { awardXp } from './xpService.js';
 import { recordActivity } from './aiMemoryService.js';
 

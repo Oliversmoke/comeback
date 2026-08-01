@@ -40,7 +40,6 @@ export async function getDashboardAnalytics(userId) {
     weeklyTrend = recent[1].rate - recent[0].rate;
   }
 
-  let streakData = { current: memory.progressTracking.averageCompletionRate };
   const bestStreak = memory.progressTracking.averageCompletionRate;
 
   const insights = await UserInsight.find({
@@ -91,9 +90,8 @@ export async function getWeeklyReport(userId) {
   const weekAgo = new Date(now);
   weekAgo.setDate(weekAgo.getDate() - 7);
 
-  const [activities, tasks, goals, insights] = await Promise.all([
+  const [activities, goals, insights] = await Promise.all([
     UserActivity.find({ user: userId, date: { $gte: weekAgo } }).lean(),
-    Task.find({ user: userId, updatedAt: { $gte: weekAgo } }).lean(),
     Goal.find({ user: userId }).lean(),
     UserInsight.find({ user: userId, createdAt: { $gte: weekAgo } }).lean(),
   ]);

@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
-import UserMemory from '../models/UserMemory.js';
 import UserInsight from '../models/UserInsight.js';
 import UserActivity from '../models/UserActivity.js';
 import { getOrCreateMemory, getUserTimeline, getProductivityTrend, getPeakProductivityHours } from '../services/aiMemoryService.js';

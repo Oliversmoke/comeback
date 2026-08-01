@@ -103,7 +103,7 @@ Return as JSON array: [{ "question": "..." }]` },
 };
 
 export const verifyTaskProof = async (task, goal, answers) => {
-  const answersText = answers.map((a, i) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
+  const answersText = answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
   const messages = [
     { role: 'system', content: `You are a task verification coach. Evaluate the user's proof of completing a task.
 Decide if they genuinely completed it based on their answers. Reply with JSON: { "approved": boolean, "feedback": "string" }` },

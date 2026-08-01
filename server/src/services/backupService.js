@@ -2,8 +2,7 @@ import User from '../models/User.js';
 import Task from '../models/Task.js';
 import Goal from '../models/Goal.js';
 import Group from '../models/Group.js';
-import XpTransaction from '../models/XpTransaction.js';
-import { sendBackupReport, sendLogDump, notifyOwner } from './emailService.js';
+import { sendBackupReport, sendLogDump } from './emailService.js';
 
 const BACKUP_INTERVAL = 24 * 60 * 60 * 1000;
 

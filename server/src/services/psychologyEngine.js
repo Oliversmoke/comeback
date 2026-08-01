@@ -334,7 +334,7 @@ export function generateReframingSuggestion(obstacle) {
   return reframes[obstacle] || null;
 }
 
-export function generateImplementationIntention(goalTitle, obstacle) {
+export function generateImplementationIntention(goalTitle, _obstacle) {
   const patterns = {
     energy: { cue: 'When I feel low energy', action: 'I will do a 5-minute version of my task' },
     distraction: { cue: 'When I get distracted by my phone', action: 'I will put it in another room and work for 10 minutes' },
@@ -431,9 +431,8 @@ export function generateGrowthMindsetPrompt(obstaclePattern) {
   return prompts[Math.floor(Math.random() * prompts.length)];
 }
 
-export function generateConsistencyPlan(user, memory) {
+export function generateConsistencyPlan(user, _memory) {
   const streak = user?.streak || 0;
-  const completionRate = memory?.progressTracking?.averageCompletionRate || 50;
 
   let plan;
   if (streak === 0) {

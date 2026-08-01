@@ -32,7 +32,9 @@ export const optionalAuth = async (req, res, next) => {
       const user = await User.findById(decoded.id);
       if (user) req.user = user.toPublicJSON();
     }
-  } catch {}
+  } catch {
+    // Invalid or expired tokens are simply ignored for optional auth.
+  }
   next();
 };
 
