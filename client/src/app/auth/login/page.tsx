@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Target, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Target, Eye, EyeOff, ArrowRight, Wallet } from 'lucide-react';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { authAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
+import { loginWithWallet } from '@/lib/walletAuth';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
@@ -20,9 +21,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [walletLoading, setWalletLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { setAuth } = useAuthStore();
   const router = useRouter();
+
+  const handleWalletLogin = async () => {
+    setWalletLoading(true);
+    const { ok } = await loginWithWallet({ successMessage: 'Wallet connected!' });
+    if (ok) router.push('/dashboard');
+    setWalletLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +92,28 @@ export default function LoginPage() {
           transition={{ delay: 0.3 }}
           className="glass-card p-8"
         >
+          <button
+            type="button"
+            onClick={handleWalletLogin}
+            disabled={walletLoading}
+            className="w-full mb-6 border border-primary-500/40 hover:border-primary-400 bg-primary-500/10 hover:bg-primary-500/20 text-primary-300 hover:text-primary-200 rounded-xl px-4 py-3 flex items-center justify-center gap-2 font-medium transition-all"
+          >
+            {walletLoading ? (
+              <div className="w-5 h-5 border-2 border-primary-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <>
+                <Wallet className="w-4 h-4" />
+                Continue with Freighter
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px bg-dark-700" />
+            <span className="text-xs text-dark-400">or sign in with email</span>
+            <div className="flex-1 h-px bg-dark-700" />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-dark-200 mb-2">Email</label>

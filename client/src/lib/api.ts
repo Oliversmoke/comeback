@@ -68,6 +68,10 @@ export const authAPI = {
     api.post('/auth/login', data),
   googleLogin: (idToken: string) =>
     api.post('/auth/google', { idToken }),
+  stellarChallenge: (publicKey: string) =>
+    api.post('/auth/stellar/challenge', { publicKey }),
+  stellarVerify: (publicKey: string, signedXdr: string) =>
+    api.post('/auth/stellar/verify', { publicKey, signedXdr }),
   refresh: (refreshToken: string) =>
     api.post('/auth/refresh', { refreshToken }),
   logout: () =>

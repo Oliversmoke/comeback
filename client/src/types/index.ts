@@ -14,6 +14,8 @@ export interface User {
   groups: string[];
   isOnline: boolean;
   lastSeen?: string;
+  stellarPublicKey?: string;
+  provider?: string;
   createdAt: string;
 }
 
