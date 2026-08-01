@@ -17,6 +17,21 @@ class OpenAIProvider {
     });
     return response.choices[0].message.content;
   }
+
+  /** SSE-friendly streaming: yields text deltas from the OpenAI SDK's async iterable. */
+  async *streamChat(messages, options = {}) {
+    const stream = await this.client.chat.completions.create({
+      model: options.model || 'gpt-4o-mini',
+      messages,
+      max_tokens: options.maxTokens || 500,
+      temperature: options.temperature ?? 0.7,
+      stream: true,
+    });
+    for await (const chunk of stream) {
+      const delta = chunk.choices?.[0]?.delta?.content;
+      if (delta) yield delta;
+    }
+  }
 }
 
 class AnthropicProvider {
@@ -44,6 +59,30 @@ class AnthropicProvider {
       temperature: options.temperature ?? 0.7,
     });
     return response.content[0].text;
+  }
+
+  /** SSE-friendly streaming: yields text deltas from Anthropic's event stream. */
+  async *streamChat(messages, options = {}) {
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const userMessages = messages.filter((m) => m.role !== 'system');
+
+    const stream = await this.client.messages.create({
+      model: options.model || 'claude-3-haiku-20240307',
+      max_tokens: options.maxTokens || 500,
+      system: systemMsg?.content,
+      messages: userMessages.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+      temperature: options.temperature ?? 0.7,
+      stream: true,
+    });
+
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+        yield event.delta.text;
+      }
+    }
   }
 }
 
@@ -82,6 +121,35 @@ class GeminiProvider {
 
     const result = await chat.sendMessage(lastMsg.content);
     return result.response.text();
+  }
+
+  /** SSE-friendly streaming: yields text chunks from Gemini's stream. */
+  async *streamChat(messages, options = {}) {
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const chatMessages = messages.filter((m) => m.role !== 'system');
+
+    const history = chatMessages.slice(0, -1).map((m) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }));
+
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    if (!lastMsg) return;
+
+    const chat = this.model.startChat({
+      history,
+      systemInstruction: systemMsg?.content,
+      generationConfig: {
+        maxOutputTokens: options.maxTokens || 500,
+        temperature: options.temperature ?? 0.7,
+      },
+    });
+
+    const result = await chat.sendMessageStream(lastMsg.content);
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) yield text;
+    }
   }
 }
 
@@ -288,6 +356,18 @@ class FallbackProvider {
     ];
     return this._pick(...defaults);
   }
+
+  /** Simulated streaming for the fallback: chunk the full response so the UI still renders incrementally. */
+  async *streamChat(messages, options = {}) {
+    const full = await this.chat(messages, options);
+    const words = String(full).split(/(\s+)/);
+    for (const word of words) {
+      if (!word) continue;
+      yield word;
+      // Tiny delay so the client sees discrete deltas (SSE flush-friendly).
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  }
 }
 
 const PROVIDER_MAP = {
@@ -344,4 +424,15 @@ export const chat = async (messages, options = {}) => {
     return fallback.chat(messages, options);
   }
   return provider.chat(messages, options);
+};
+
+/**
+ * Stream a chat completion as an async generator of text deltas. Delegates to
+ * the active provider's streamChat (all providers implement it; the fallback
+ * simulates streaming). Yields nothing if no provider is configured.
+ */
+export const streamChat = async function* (messages, options = {}) {
+  const provider = getAIProvider();
+  if (!provider || typeof provider.streamChat !== 'function') return;
+  yield* provider.streamChat(messages, options);
 };

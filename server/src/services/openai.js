@@ -1,4 +1,4 @@
-import { chat } from './ai/providers.js';
+import { chat, streamChat } from './ai/providers.js';
 
 const SYSTEM_PROMPTS = {
   coach: `You are a warm, human-like productivity coach inside a social productivity app. 
@@ -117,16 +117,28 @@ Decide if they genuinely completed it based on their answers. Reply with JSON: {
   }
 };
 
-export const chatWithCoach = async (user, message, context) => {
+const buildCoachMessages = (user, message, context) => {
   const cleanContext = {
     goals: (context.goals || []).map((g) => ({ title: g.title, category: g.category, progress: g.progress, status: g.status })),
     tasks: (context.tasks || []).map((t) => ({ title: t.title, status: t.status, priority: t.priority })),
     groupProgress: context.groupProgress || null,
   };
 
-  const messages = [
+  return [
     { role: 'system', content: SYSTEM_PROMPTS.coach },
     { role: 'user', content: `User profile: ${user.username}, Level ${user.level}, ${user.xp} XP, ${user.streak}-day streak, ${user.completedTasks} tasks completed.\n\nContext: ${JSON.stringify(cleanContext)}\n\nUser message: ${message}` },
   ];
-  return chat(messages, { maxTokens: 500, temperature: 0.8 });
+};
+
+export const chatWithCoach = async (user, message, context) => {
+  return chat(buildCoachMessages(user, message, context), { maxTokens: 500, temperature: 0.8 });
+};
+
+/**
+ * Streaming variant of chatWithCoach: returns an async generator of text
+ * deltas backed by the active provider's streamChat (fallback simulates
+ * streaming). Used by the /ai/chat/stream SSE endpoint.
+ */
+export const chatWithCoachStream = (user, message, context) => {
+  return streamChat(buildCoachMessages(user, message, context), { maxTokens: 500, temperature: 0.8 });
 };

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { catchAsync, AppError } from '../middleware/errorHandler.js';
 import { validate, aiPromptSchema } from '../validators/schemas.js';
-import { generateDailyTasks, generateInsights, chatWithCoach } from '../services/openai.js';
+import { generateDailyTasks, generateInsights, chatWithCoach, chatWithCoachStream } from '../services/openai.js';
 import User from '../models/User.js';
 import Goal from '../models/Goal.js';
 import Task from '../models/Task.js';
@@ -79,6 +79,60 @@ router.post('/chat', validate(aiPromptSchema), catchAsync(async (req, res) => {
   const response = await chatWithCoach(user, prompt, userContext);
 
   res.json({ success: true, data: { response, context: userContext } });
+}));
+
+/**
+ * Server-Sent Events streaming variant of /chat. The client reads the stream
+ * via fetch + ReadableStream; each frame is `data: {"delta":"..."}` and the
+ * stream ends with `data: {"done":true}`.
+ */
+router.post('/chat/stream', validate(aiPromptSchema), catchAsync(async (req, res) => {
+  const { prompt, context } = req.validatedBody;
+  const user = await User.findById(req.user.id);
+
+  const userContext = context || {};
+  if (!context?.goals) {
+    const goals = await Goal.find({ user: req.user.id, status: 'active' }).limit(5);
+    userContext.goals = goals;
+  }
+  if (!context?.tasks) {
+    const tasks = await Task.find({ user: req.user.id, status: { $in: ['pending', 'in_progress'] } }).limit(5);
+    userContext.tasks = tasks;
+  }
+
+  // SSE headers — disable buffering so deltas flush as they arrive.
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+
+  const send = (payload) => {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    if (typeof res.flush === 'function') res.flush();
+  };
+
+  // Stop generating (and stop burning tokens) as soon as the client disconnects,
+  // e.g. when the user hits Stop and aborts the fetch.
+  let clientClosed = false;
+  req.on('close', () => {
+    clientClosed = true;
+    res.end();
+  });
+
+  try {
+    for await (const delta of chatWithCoachStream(user, prompt, userContext)) {
+      if (clientClosed) break;
+      send({ delta });
+    }
+    if (!clientClosed) send({ done: true });
+  } catch (error) {
+    if (!clientClosed) send({ error: error.message || 'AI stream failed' });
+  } finally {
+    res.end();
+  }
 }));
 
 router.post('/group-adapt', catchAsync(async (req, res) => {

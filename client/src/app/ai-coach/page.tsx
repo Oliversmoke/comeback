@@ -2,10 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Sparkles, Target, Lightbulb, TrendingUp, User, MessageSquare, LockKeyhole } from 'lucide-react';
+import { Bot, Send, Square, Sparkles, Target, Lightbulb, TrendingUp, User, MessageSquare } from 'lucide-react';
 import { aiAPI } from '@/lib/api';
 import { AnimatedPage, FadeIn } from '@/components/animations/MotionComponents';
-import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 
 interface ChatMessage {
@@ -14,10 +13,7 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL;
-
 export default function AICoachPage() {
-  const { user } = useAuthStore();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'coach',
@@ -27,42 +23,79 @@ export default function AICoachPage() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [streamingText, setStreamingText] = useState<string | null>(null);
   const [insights, setInsights] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const isOwner = OWNER_EMAIL ? user?.email === OWNER_EMAIL : false;
+  const streamingBufferRef = useRef('');
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, streamingText]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMsg = input.trim();
+  /** Abort the in-flight SSE stream (Stop button). */
+  const stopStreaming = () => {
+    abortRef.current?.abort();
+  };
+
+  const sendMessage = async (prompt?: string) => {
+    const userMsg = (prompt ?? input).trim();
+    if (!userMsg || loading) return;
     setInput('');
 
     setMessages((prev) => [...prev, { role: 'user', content: userMsg, timestamp: new Date() }]);
     setLoading(true);
+    // Keep streamingText null until the first delta arrives so the typing-dots
+    // indicator shows while we await the first token, then swap to the live bubble.
+    setStreamingText(null);
+    streamingBufferRef.current = '';
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
-      const { data } = await aiAPI.chat({
-        prompt: userMsg,
-        context: { recentMessages: messages.slice(-5) },
-      });
-      setMessages((prev) => [...prev, {
-        role: 'coach',
-        content: data.data.response,
-        timestamp: new Date(),
-      }]);
-    } catch {
-      toast.error('Failed to get AI response');
-      setMessages((prev) => [...prev, {
-        role: 'coach',
-        content: "I'm having trouble connecting right now. Please try again in a moment.",
-        timestamp: new Date(),
-      }]);
+      await aiAPI.chatStream(
+        { prompt: userMsg, context: { recentMessages: messages.slice(-5) } },
+        (delta) => {
+          streamingBufferRef.current += delta;
+          setStreamingText(streamingBufferRef.current);
+        },
+        controller.signal
+      );
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'coach',
+          content:
+            streamingBufferRef.current ||
+            "I didn't catch that — try asking again in a moment.",
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (err) {
+      if ((err as Error)?.name === 'AbortError') {
+        // User hit Stop — keep whatever streamed so far.
+        if (streamingBufferRef.current) {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'coach', content: streamingBufferRef.current, timestamp: new Date() },
+          ]);
+        }
+      } else {
+        toast.error('Failed to get AI response');
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'coach',
+            content: "I'm having trouble connecting right now. Please try again in a moment.",
+            timestamp: new Date(),
+          },
+        ]);
+      }
     } finally {
       setLoading(false);
+      setStreamingText(null);
+      abortRef.current = null;
     }
   };
 
@@ -93,29 +126,6 @@ export default function AICoachPage() {
       toast.error('Failed to generate tasks');
     }
   };
-
-  if (!isOwner) {
-    return (
-      <AnimatedPage>
-        <div className="min-h-[80vh] flex items-center justify-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center max-w-lg"
-          >
-            <div className="w-24 h-24 rounded-3xl bg-dark-700/50 flex items-center justify-center mx-auto mb-6">
-              <LockKeyhole className="w-12 h-12 text-dark-400" />
-            </div>
-            <h1 className="text-3xl font-bold mb-3 text-dark-300">AI Coach</h1>
-            <p className="text-dark-500 mb-8 text-lg">
-              This feature is currently in private preview and not yet available for your account.
-            </p>
-          </motion.div>
-        </div>
-      </AnimatedPage>
-    );
-  }
 
   return (
     <AnimatedPage>
@@ -177,7 +187,7 @@ export default function AICoachPage() {
                   )}
                 </motion.div>
               ))}
-              {loading && (
+              {loading && streamingText === null && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -207,6 +217,23 @@ export default function AICoachPage() {
                   </div>
                 </motion.div>
               )}
+              {streamingText !== null && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-accent-500/20 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-accent-400" />
+                  </div>
+                  <div className="bg-dark-700/50 border border-dark-600/50 p-4 rounded-2xl rounded-bl-md max-w-[80%]">
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {streamingText}
+                      <span className="inline-block w-2 h-4 ml-0.5 bg-accent-400 animate-pulse align-text-bottom" />
+                    </p>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
             <div ref={messagesEndRef} />
           </div>
@@ -224,15 +251,28 @@ export default function AICoachPage() {
                 className="input-field flex-1"
                 disabled={loading}
               />
-              <motion.button
-                type="submit"
-                disabled={loading || !input.trim()}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="btn-primary px-5"
-              >
-                <Send className="w-4 h-4" />
-              </motion.button>
+              {loading ? (
+                <motion.button
+                  type="button"
+                  onClick={stopStreaming}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="btn-secondary px-5"
+                  title="Stop generating"
+                >
+                  <Square className="w-4 h-4" />
+                </motion.button>
+              ) : (
+                <motion.button
+                  type="submit"
+                  disabled={!input.trim()}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="btn-primary px-5"
+                >
+                  <Send className="w-4 h-4" />
+                </motion.button>
+              )}
             </form>
           </div>
         </div>
@@ -258,7 +298,11 @@ export default function AICoachPage() {
                 <Target className="w-4 h-4 text-primary-400" />
                 Generate Daily Tasks
               </button>
-              <button className="w-full p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 border border-dark-700/50 text-left text-sm transition-all flex items-center gap-3">
+              <button
+                onClick={() => sendMessage('Analyze my current progress')}
+                disabled={loading}
+                className="w-full p-3 rounded-xl bg-dark-700/30 hover:bg-primary-500/10 border border-dark-700/50 text-left text-sm transition-all flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
                 <TrendingUp className="w-4 h-4 text-green-400" />
                 Analyze My Progress
               </button>

@@ -159,4 +159,55 @@ export const aiAPI = {
     api.post('/ai/chat', data),
   getGroupAdaptations: (groupId: string) =>
     api.post('/ai/group-adapt', { groupId }),
+
+  /**
+   * Stream the AI coach's reply via SSE (fetch + ReadableStream). The server
+   * sends `data: {"delta":"..."}` frames and finishes with `data: {"done":true}`.
+   * Invokes onDelta per chunk; resolves on done, rejects on error/abort.
+   */
+  chatStream: async (
+    data: { prompt: string; context?: any },
+    onDelta: (text: string) => void,
+    signal?: AbortSignal
+  ): Promise<void> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const res = await fetch(`${API_URL}/api/ai/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(data),
+      signal,
+    });
+    if (!res.ok || !res.body) {
+      throw new Error(`Stream request failed (${res.status})`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split on SSE frame boundaries (blank line) and parse complete frames.
+      const frames = buffer.split('\n\n');
+      buffer = frames.pop() ?? '';
+      for (const frame of frames) {
+        const line = frame.split('\n').find((l) => l.startsWith('data: '));
+        if (!line) continue;
+        let payload: { delta?: string; done?: boolean; error?: string };
+        try {
+          payload = JSON.parse(line.slice(6));
+        } catch {
+          continue; // ignore malformed frames
+        }
+        if (payload.error) throw new Error(payload.error);
+        if (payload.delta) onDelta(payload.delta);
+        if (payload.done) return;
+      }
+    }
+  },
 };
