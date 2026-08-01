@@ -1,11 +1,12 @@
 {
-  "name": "@comeback/sdk",
+  "name": "@stakemind/sdk",
   "version": "0.1.0",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "npm run build && node --test"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^13.0.0"
