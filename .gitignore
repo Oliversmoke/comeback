@@ -19,6 +19,9 @@ client/cordova-plugins/
 # Legacy Gradle project (old RickChat)
 .gradle/
 
+# Rust / Soroban contract build artifacts
+target/
+
 # Server data (MongoDB local files)
 server/data/
 
