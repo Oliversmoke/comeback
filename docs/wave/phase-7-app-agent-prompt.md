@@ -95,7 +95,7 @@ Never prefix secrets with `NEXT_PUBLIC_`. Client-side env must be strictly `NEXT
 1. **SDK: DONE.** Real XDR builders + ScVal decoders + Soroban RPC read/write helpers + 9 unit tests. Build/test: `cd packages/sdk && npm run build && npm test`.
 2. **Server auth: DONE.** SEP-10 challenge/verify endpoints issuing JWTs (`/api/auth/stellar/*`, 6 tests) + existing JWT middleware.
 3. **Server contract endpoints:** `POST /api/contracts/stake`, `/complete`, `/forfeit`, `/expire`, `/deposit`, `/distribute`, `/verify` — zod-validated, rate-limited, admin-gated, calling the SDK.
-4. **Indexer: REMAINING STUB — implement now.** `indexer/src/index.js` still only logs, polls nothing, and ships a `dummy-key` service-role fallback (remove it). Implement: Soroban RPC event polling (10s interval, cursor-based), ScVal decoding, upsert to Supabase (`event_log`), dedup + exponential backoff, health endpoint.
+4. **Indexer: REMAINING STUB — implement now.** `indexer/src/index.js` still only logs and polls nothing (the `dummy-key` service-role fallback is gone — replaced with a fail-fast guard on missing `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`). Implement: Soroban RPC event polling (10s interval, cursor-based), ScVal decoding, upsert to Supabase (`event_log`), dedup + exponential backoff, health endpoint.
 5. **Frontend:** wallet connect (Freighter), goal stake/create/complete UI wired to real SDK calls, group pool UI, receipt display, AI coach chat (streaming), leaderboard.
 6. **Docs:** developer quick-start, env var reference, SDK API reference with real examples.
 7. **CI:** add server tests, indexer build, SDK build to `.github/workflows/ci.yml`.

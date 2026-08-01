@@ -87,7 +87,7 @@ cd packages/sdk && npm install && npm run build
 ### Failure-trace examples (root-cause fixes)
 
 - **Frontend hitting `localhost` in prod:** caused by hardcoded `http://localhost:5000` in client API base. Fix at source: make the API base a `NEXT_PUBLIC_API_URL` env var; default to relative `/api` proxy in dev.
-- **Indexer connecting to `dummy-key`:** the stub falls back to a dummy service-role key. Fix at source: fail fast with a clear error if `SUPABASE_SERVICE_ROLE_KEY` is unset; no silent dummy fallbacks.
+- **Indexer `dummy-key` fallback: FIXED.** The stub previously fell back to a dummy service-role key; it now fails fast with a clear error when `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` are unset — no silent dummy fallbacks. (Event polling itself remains unimplemented.)
 - **Wallet writes failing in prod:** RPC URL must be the public testnet/mainnet RPC, not a local sandbox — set `STELLAR_RPC_URL` per environment, never default to localhost.
 
 ### Known follow-up (from Phase 4 decision)
