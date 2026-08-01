@@ -32,7 +32,10 @@
  */
 import { randomBytes } from 'node:crypto';
 import { StakeMindSDK, signInvocationXdr } from '../dist/index.js';
-import { Asset, Keypair, xdr, scValToNative } from '@stellar/stellar-sdk';
+import { Asset, Keypair, scValToNative } from '@stellar/stellar-sdk';
+import { makeLogger, fixSequence, fundedAccount, findStakedEvent, checkSupabaseEvent } from './lib/smoke-helpers.mjs';
+
+const { log, fail } = makeLogger('smoke');
 
 const PASSPHRASE = process.env.NETWORK_PASSPHRASE || 'Test SDF Network ; September 2015';
 const RPC_URL = process.env.STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
@@ -53,14 +56,6 @@ const AMOUNT = BigInt(Math.round(AMOUNT_XLM * 1e7)).toString(); // XLM → stroo
 const DEADLINE = BigInt(process.env.DEADLINE || '0');
 const GOAL_ID = process.env.GOAL_ID ? Number(process.env.GOAL_ID) : randomBytes(4).readUInt32BE(0) + 1;
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const log = (msg) => console.log(`[smoke] ${msg}`);
-const fail = (msg) => {
-  console.error(`[smoke] FAIL: ${msg}`);
-  process.exit(1);
-};
-
 const sdk = new StakeMindSDK({
   networkPassphrase: PASSPHRASE,
   rpcUrl: RPC_URL,
@@ -70,107 +65,6 @@ const sdk = new StakeMindSDK({
   milestoneContractId: MILESTONE,
 });
 
-/**
- * Account from RPC; funds via friendbot if it does not exist yet. Friendbot
- * rate-limits per IP and GitHub runner egress pools are shared, so retry a few
- * times with backoff before giving up (avoids flaky CI on the testnet gate).
- */
-async function fundedAccount(keypair, attempts = 3) {
-  const pub = keypair.publicKey();
-  try {
-    const account = await sdk.rpc.getAccount(pub);
-    log(`account already funded: ${pub} (seq ${account.sequenceNumber()})`);
-    return account;
-  } catch (err) {
-    for (let i = 1; i <= attempts; i++) {
-      log(`funding ${pub} via friendbot (attempt ${i}/${attempts})…`);
-      const res = await fetch(`${FRIENDBOT_URL}?addr=${encodeURIComponent(pub)}`);
-      if (res.ok) {
-        const account = await sdk.rpc.getAccount(pub);
-        log(`funded: ${pub} (seq ${account.sequenceNumber()})`);
-        return account;
-      }
-      const body = (await res.text()).slice(0, 200);
-      if (i === attempts) {
-        fail(`friendbot funding failed after ${attempts} attempts (${res.status}): ${body}`);
-      }
-      log(`friendbot ${res.status} — retrying in ${i * 2}s`);
-      await sleep(i * 2000);
-    }
-  }
-}
-
-/**
- * Set the real account sequence on an SDK-built invocation XDR. The SDK
- * builds with `new Account(source, '0')` (wallets fix the seq at sign time);
- * a server-side keypair needs the live sequence before prepare+submit.
- *
- * On testnet, a freshly friendbot-funded account's Horizon/RPC sequence is
- * one behind the sequence the network accepts for the next transaction, so
- * we add 1 (verified empirically: seq rejected with txBadSeq, seq+1 settles).
- * The same +1 is applied when STAKE_SECRET reuses an existing account.
- */
-function fixSequence(xdrBase64, sequenceNumber) {
-  const envelope = xdr.TransactionEnvelope.fromXDR(xdrBase64, 'base64');
-  const tx = envelope.v1().tx();
-  tx.seqNum(xdr.SequenceNumber.fromString(sequenceNumber));
-  return envelope.toXDR('base64').toString();
-}
-
-/** Scan RPC events for our goal_staked event (the indexer's data source). */
-async function findStakedEvent(startLedger, goalId, amount, maxTries = 15) {
-  for (let i = 0; i < maxTries; i++) {
-    try {
-      const res = await sdk.rpc.getEvents({
-        startLedger,
-        filters: [{ type: 'contract', contractIds: [GOAL_STAKING] }],
-        pagination: { limit: 20 },
-      });
-      const hit = (res.events || []).find((evt) => {
-        if (evt.inSuccessfulContractCall === false) return false;
-        if (evt.contractId.toString() !== GOAL_STAKING) return false;
-        const topic = (evt.topic || []).map((t) => scValToNative(t));
-        if (topic[0] !== 'goal_staked') return false;
-        if (BigInt(topic[1]) !== BigInt(goalId)) return false;
-        return BigInt(scValToNative(evt.value)) === BigInt(amount);
-      });
-      if (hit) return hit;
-    } catch (err) {
-      log(`getEvents attempt ${i + 1} errored: ${err.message}`);
-    }
-    await sleep(2000);
-  }
-  return undefined;
-}
-
-/** Optional indexer-DB verification: check Supabase event_log for the stake. */
-async function checkSupabaseEvent(goalId, hash) {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
-    log('Supabase event_log check skipped (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY not set).');
-    return;
-  }
-  try {
-    const res = await fetch(
-      `${supabaseUrl.replace(/\/$/, '')}/rest/v1/event_log?goal_id=eq.${goalId}&select=*`,
-      { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
-    );
-    if (!res.ok) {
-      log(`event_log query failed (${res.status}) — indexer may not be running.`);
-      return;
-    }
-    const rows = await res.json();
-    if (rows.length === 0) {
-      log('event_log has no rows for this goal yet — indexer may be lagging or not running.');
-    } else {
-      log(`event_log row found: ${JSON.stringify(rows[0])}`);
-    }
-  } catch (err) {
-    log(`event_log check errored: ${err.message}`);
-  }
-}
-
 async function main() {
   log(`goalId=${GOAL_ID} amount=${AMOUNT} stroops (${AMOUNT_XLM} XLM) deadline=${DEADLINE}`);
   log(`goal-staking contract: ${GOAL_STAKING}`);
@@ -178,7 +72,7 @@ async function main() {
 
   const secret = process.env.STAKE_SECRET;
   const keypair = secret ? Keypair.fromSecret(secret) : Keypair.random();
-  const account = await fundedAccount(keypair);
+  const account = await fundedAccount({ sdk, friendbotUrl: FRIENDBOT_URL, keypair, log, fail });
   const pub = keypair.publicKey();
 
   // 1. Build + fix sequence + prepare + sign + submit. The friendbot-funded
@@ -200,7 +94,7 @@ async function main() {
   if (result !== undefined) log(`contract result: ${JSON.stringify(result)}`);
 
   // 2. Verify the event via Soroban RPC (the indexer's source of truth).
-  const evt = await findStakedEvent(startLedger, GOAL_ID, AMOUNT);
+  const evt = await findStakedEvent({ sdk, contractId: GOAL_STAKING, startLedger, goalId: GOAL_ID, amount: AMOUNT, log });
   if (!evt) {
     fail(`goal_staked event for goal ${GOAL_ID} not found in RPC events (ledger ${startLedger}+)`);
   }
@@ -224,7 +118,7 @@ async function main() {
   }
 
   // 4. Optional indexer-DB check.
-  await checkSupabaseEvent(GOAL_ID, hash);
+  await checkSupabaseEvent({ goalId: GOAL_ID, hash, log });
 
   log('PASS — stake submitted and goal_staked event verified via RPC.');
 }

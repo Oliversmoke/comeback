@@ -31,5 +31,8 @@ joke-generator.js
 .vercel
 scripts/.bulk-issues.log
 
+# USDC smoke-test seed secret (testnet only, never commit)
+.usdc-seed-secret
+
 # soroban-sdk test snapshot artifacts
 test_snapshots/

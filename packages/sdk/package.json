@@ -8,7 +8,8 @@
     "build": "tsc",
     "test": "npm run build && node --test",
     "smoke:stake": "npm run build && node scripts/smoke-test-stake.mjs",
-    "verify:client-env": "npm run build && node scripts/verify-client-env.mjs"
+    "verify:client-env": "npm run build && node scripts/verify-client-env.mjs",
+    "smoke:stake-usdc": "npm run build && node scripts/smoke-test-stake-usdc.mjs"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^13.0.0"
