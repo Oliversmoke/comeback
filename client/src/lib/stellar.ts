@@ -3,7 +3,7 @@
  * Builds the SDK from NEXT_PUBLIC_* env vars and drives the wallet stake flow
  * (build XDR → simulate via RPC → sign in Freighter → submit & confirm).
  */
-import { StakeMindSDK, type StakeMindSDKConfig } from '@stakemind/sdk';
+import { StakeMindSDK, type StakeMindSDKConfig, type GroupPool, type MilestoneReceipt } from '@stakemind/sdk';
 import { connectFreighter, signFreighterTransaction, getFreighterNetwork } from '@/lib/freighter';
 
 export const TESTNET_PASSPHRASE = 'Test SDF Network ; September 2015';
@@ -90,13 +90,7 @@ export const stakeGoalWithWallet = async (params: StakeGoalParams): Promise<Stak
   const amount = xlmToStroops(params.amountXlm);
   const deadline = params.deadline ?? BigInt(0);
 
-  const walletNetwork = await getFreighterNetwork();
-  if (walletNetwork.networkPassphrase !== sdk.getNetworkPassphrase()) {
-    throw new Error(
-      `Network mismatch: your wallet is on ${walletNetwork.network}, but staking targets ` +
-        `the ${sdk.getNetworkPassphrase()} network. Switch networks in Freighter.`
-    );
-  }
+  await assertWalletNetworkMatches(sdk);
 
   const xdr = sdk.buildStakeGoalXdr(params.publicKey, params.goalId, token, amount, deadline);
   const prepared = await sdk.prepareInvocation(params.publicKey, xdr);
@@ -106,12 +100,106 @@ export const stakeGoalWithWallet = async (params: StakeGoalParams): Promise<Stak
 };
 
 /**
- * Resolve the wallet public key to stake from: the logged-in wallet user's
- * key if present, otherwise prompt the user to connect Freighter.
+ * Resolve the wallet public key to act from: the logged-in wallet user's key
+ * if present, otherwise prompt the user to connect Freighter.
  */
 export const resolveStakePublicKey = async (loggedInStellarKey?: string): Promise<string> => {
   if (loggedInStellarKey) return loggedInStellarKey;
   return connectFreighter();
+};
+
+/** Shared wallet-network guard for every Soroban write (matches stake flow). */
+const assertWalletNetworkMatches = async (sdk: StakeMindSDK): Promise<void> => {
+  const walletNetwork = await getFreighterNetwork();
+  if (walletNetwork.networkPassphrase !== sdk.getNetworkPassphrase()) {
+    throw new Error(
+      `Network mismatch: your wallet is on ${walletNetwork.network}, but the contract ` +
+        `targets the ${sdk.getNetworkPassphrase()} network. Switch networks in Freighter.`
+    );
+  }
+};
+
+export interface PoolDepositParams {
+  publicKey: string;
+  groupId: number;
+  amountXlm: string;
+  token?: string;
+}
+
+/**
+ * Full wallet deposit flow for the GroupEscrow contract: build → simulate →
+ * Freighter sign → submit. User-gated on-chain (any connected wallet can
+ * deposit into a pool).
+ */
+export const depositPoolWithWallet = async (params: PoolDepositParams): Promise<StakeResult> => {
+  const sdk = getStakeMindSDK();
+  const token = params.token || TESTNET_XLM_TOKEN;
+  const amount = xlmToStroops(params.amountXlm);
+
+  await assertWalletNetworkMatches(sdk);
+
+  const xdr = sdk.buildDepositPoolXdr(params.publicKey, params.groupId, token, amount);
+  const prepared = await sdk.prepareInvocation(params.publicKey, xdr);
+  const signed = await signFreighterTransaction(prepared, sdk.getNetworkPassphrase());
+  const result = await sdk.submitAndConfirm(signed);
+  return { hash: result.hash, result: result.result };
+};
+
+export interface VerifyMilestoneParams {
+  adminPublicKey: string;
+  userPublicKey: string;
+  goalId: number;
+  milestoneId: number;
+}
+
+/**
+ * Full wallet flow for MilestoneContract.verify_milestone — admin-gated
+ * on-chain: only the contract's stored admin can verify. The connected wallet
+ * must be that admin (surfaces "unauthorized admin" otherwise).
+ *
+ * Note: the contract records the passed `userPublicKey` as the receipt's
+ * user. We pass the acting wallet (the verifier) since the app has no
+ * goal-owner → Stellar-key mapping; wire a server-side admin flow later if
+ * receipts must record the goal owner instead.
+ */
+export const verifyMilestoneWithWallet = async (params: VerifyMilestoneParams): Promise<StakeResult> => {
+  const sdk = getStakeMindSDK();
+
+  await assertWalletNetworkMatches(sdk);
+
+  const xdr = sdk.buildVerifyMilestoneXdr(
+    params.adminPublicKey,
+    params.userPublicKey,
+    params.goalId,
+    params.milestoneId
+  );
+  const prepared = await sdk.prepareInvocation(params.adminPublicKey, xdr);
+  const signed = await signFreighterTransaction(prepared, sdk.getNetworkPassphrase());
+  const result = await sdk.submitAndConfirm(signed);
+  return { hash: result.hash, result: result.result };
+};
+
+/**
+ * Read a GroupEscrow pool. `source` is any wallet key used to simulate the
+ * read. Throws when the pool has never been created (get_pool panics
+ * on-chain) — callers should treat that as "no pool yet".
+ */
+export const fetchGroupPool = async (groupId: number, source: string): Promise<GroupPool> => {
+  const sdk = getStakeMindSDK();
+  return sdk.readPool(groupId, source);
+};
+
+/**
+ * Read a MilestoneContract receipt. Throws when the milestone was never
+ * verified on-chain — callers should treat that as "not verified".
+ */
+export const fetchMilestoneReceipt = async (
+  goalId: number,
+  milestoneId: number,
+  source: string
+): Promise<MilestoneReceipt> => {
+  const sdk = getStakeMindSDK();
+  return sdk.readReceipt(goalId, milestoneId, source);
 };
 
 export interface StellarBalances {

@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Target, ArrowLeft, Clock, CheckCircle2, Trash2, Plus, HandCoins, Loader2, ExternalLink, Wallet, RefreshCw } from 'lucide-react';
+import { Target, ArrowLeft, Clock, CheckCircle2, Trash2, Plus, HandCoins, Loader2, ExternalLink, Wallet, RefreshCw, ShieldCheck, Shield } from 'lucide-react';
 import { goalsAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useBalancesStore } from '@/store/balancesStore';
-import { isStakingConfigured, stakeGoalWithWallet, goalIdFromObjectId, resolveStakePublicKey, formatStellarBalance } from '@/lib/stellar';
+import { isStakingConfigured, stakeGoalWithWallet, verifyMilestoneWithWallet, fetchMilestoneReceipt, goalIdFromObjectId, resolveStakePublicKey, formatStellarBalance } from '@/lib/stellar';
 import { isFreighterAvailable } from '@/lib/freighter';
 import { AnimatedPage, FadeIn } from '@/components/animations/MotionComponents';
 import { getCategoryColor, getStatusColor, formatDate } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import type { Goal } from '@/types';
+import type { Goal, Milestone } from '@/types';
 
 export default function GoalDetailPage() {
   const params = useParams();
@@ -28,6 +28,9 @@ export default function GoalDetailPage() {
   const [stakeAmount, setStakeAmount] = useState('');
   const [staking, setStaking] = useState(false);
   const [stakeTx, setStakeTx] = useState<{ hash: string } | null>(null);
+  // On-chain milestone verification (MilestoneContract, admin-gated).
+  const [verifiedMilestones, setVerifiedMilestones] = useState<Record<string, { timestamp: string }>>({});
+  const [verifyingMilestone, setVerifyingMilestone] = useState<string | null>(null);
 
   useEffect(() => {
     loadGoal();
@@ -58,6 +61,70 @@ export default function GoalDetailPage() {
       setGoal(data.data);
     } catch {
       toast.error('Failed to update milestone');
+    }
+  };
+
+  /**
+   * Load on-chain verification receipts for each milestone (MilestoneContract
+   * get_receipt). A missing receipt means "not verified on-chain yet" — the
+   * contract panics on reads of unverified milestones, so we treat that as
+   * unverified rather than an error.
+   */
+  const loadVerifiedMilestones = async () => {
+    if (!goal || !walletKey || !isStakingConfigured()) return;
+    const goalId = goalIdFromObjectId(goal._id);
+    const receipts: Record<string, { timestamp: string }> = {};
+    for (const ms of goal.milestones || []) {
+      const milestoneId = ms._id ? goalIdFromObjectId(ms._id) : undefined;
+      if (milestoneId === undefined) continue;
+      try {
+        const receipt = await fetchMilestoneReceipt(goalId, milestoneId, walletKey);
+        receipts[ms._id!] = { timestamp: String(receipt.timestamp) };
+      } catch {
+        // not verified on-chain yet — leave unset
+      }
+    }
+    setVerifiedMilestones(receipts);
+  };
+
+  useEffect(() => {
+    loadVerifiedMilestones();
+  }, [goal?._id, walletKey]);
+
+  /** Verify a milestone on-chain (MilestoneContract.verify_milestone). */
+  const handleVerifyMilestone = async (milestone: Milestone) => {
+    if (!goal) return;
+    if (!milestone._id) return toast.error('This milestone has no id to verify');
+    setVerifyingMilestone(milestone._id);
+    try {
+      if (!isStakingConfigured()) {
+        throw new Error('On-chain verification is not live yet — set the NEXT_PUBLIC_*_CONTRACT_ID env vars.');
+      }
+      const adminKey = await resolveStakePublicKey(user?.stellarPublicKey);
+      const { hash } = await verifyMilestoneWithWallet({
+        adminPublicKey: adminKey,
+        userPublicKey: adminKey,
+        goalId: goalIdFromObjectId(goal._id),
+        milestoneId: goalIdFromObjectId(milestone._id),
+      });
+      setVerifiedMilestones((prev) => ({
+        ...prev,
+        [milestone._id!]: { timestamp: String(Math.floor(Date.now() / 1000)) },
+      }));
+      toast.success(
+        <span>
+          Milestone verified on-chain!{' '}
+          <a href={`https://stellar.expert/explorer/testnet/tx/${hash}`} target="_blank" rel="noopener noreferrer" className="underline">
+            View tx
+          </a>
+        </span>
+      );
+    } catch (err) {
+      const message =
+        (err as any)?.response?.data?.message || (err as Error)?.message || 'Verification failed';
+      toast.error(message);
+    } finally {
+      setVerifyingMilestone(null);
     }
   };
 
@@ -256,8 +323,44 @@ export default function GoalDetailPage() {
                       <span className={`text-sm flex-1 ${ms.isCompleted ? 'line-through text-dark-400' : ''}`}>
                         {ms.title}
                       </span>
-                      {ms.completedAt && (
+                      {ms._id && verifiedMilestones[ms._id] && (
+                        <span
+                          className="flex items-center gap-1 text-xs text-emerald-400 font-medium"
+                          title={`Verified on-chain at ${new Date(
+                            Number(verifiedMilestones[ms._id].timestamp) * 1000
+                          ).toLocaleString()}`}
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          On-chain
+                        </span>
+                      )}
+                      {ms.completedAt && !verifiedMilestones[ms._id!] && (
                         <span className="text-xs text-dark-400">{formatDate(ms.completedAt)}</span>
+                      )}
+                      {ms._id && isStakingConfigured() && (
+                        <button
+                          onClick={() => handleVerifyMilestone(ms)}
+                          disabled={verifyingMilestone === ms._id || Boolean(verifiedMilestones[ms._id])}
+                          className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg border border-dark-600 text-dark-300 hover:text-primary-300 hover:border-primary-400/60 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={
+                            verifiedMilestones[ms._id]
+                              ? 'Verified on-chain'
+                              : 'Verify on-chain (admin-gated — requires the contract admin wallet)'
+                          }
+                        >
+                          {verifyingMilestone === ms._id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : verifiedMilestones[ms._id] ? (
+                            <ShieldCheck className="w-3 h-3" />
+                          ) : (
+                            <Shield className="w-3 h-3" />
+                          )}
+                          {verifyingMilestone === ms._id
+                            ? 'Verifying…'
+                            : verifiedMilestones[ms._id]
+                              ? 'Verified'
+                              : 'Verify on-chain'}
+                        </button>
                       )}
                     </motion.div>
                   ))
