@@ -1,0 +1,44 @@
+name: Testnet Smoke
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}
+
+# Cancel overlapping runs: rapid pushes each hit friendbot + testnet RPC, and
+# cancelling stale runs keeps the gate from compounding rate-limit flakes.
+concurrency:
+  group: testnet-smoke
+  cancel-in-progress: true
+
+jobs:
+  verify-client-env:
+    name: Verify Client Env (testnet stake)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: packages/sdk/package-lock.json
+
+      # client/.env.local is gitignored; materialize it from the example file,
+      # which documents the deployed testnet contract set as reference values.
+      - name: Materialize client env from example
+        run: cp client/.env.local.example client/.env.local
+
+      - name: Install SDK dependencies
+        working-directory: packages/sdk
+        run: npm ci
+
+      # End-to-end: builds the SDK, then verify-client-env.mjs parses
+      # client/.env.local, validates the wiring, and drives a real stake on
+      # Stellar testnet (friendbot-funded keypair) verifying the goal_staked
+      # event via Soroban RPC. Fails the build if the wiring is broken.
+      - name: Verify client env against testnet
+        working-directory: packages/sdk
+        run: npm run verify:client-env

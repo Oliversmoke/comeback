@@ -70,22 +70,33 @@ const sdk = new StakeMindSDK({
   milestoneContractId: MILESTONE,
 });
 
-/** Account from RPC; funds via friendbot if it does not exist yet. */
-async function fundedAccount(keypair) {
+/**
+ * Account from RPC; funds via friendbot if it does not exist yet. Friendbot
+ * rate-limits per IP and GitHub runner egress pools are shared, so retry a few
+ * times with backoff before giving up (avoids flaky CI on the testnet gate).
+ */
+async function fundedAccount(keypair, attempts = 3) {
   const pub = keypair.publicKey();
   try {
     const account = await sdk.rpc.getAccount(pub);
     log(`account already funded: ${pub} (seq ${account.sequenceNumber()})`);
     return account;
   } catch (err) {
-    log(`funding ${pub} via friendbot…`);
-    const res = await fetch(`${FRIENDBOT_URL}?addr=${encodeURIComponent(pub)}`);
-    if (!res.ok) {
-      fail(`friendbot funding failed (${res.status}): ${(await res.text()).slice(0, 300)}`);
+    for (let i = 1; i <= attempts; i++) {
+      log(`funding ${pub} via friendbot (attempt ${i}/${attempts})…`);
+      const res = await fetch(`${FRIENDBOT_URL}?addr=${encodeURIComponent(pub)}`);
+      if (res.ok) {
+        const account = await sdk.rpc.getAccount(pub);
+        log(`funded: ${pub} (seq ${account.sequenceNumber()})`);
+        return account;
+      }
+      const body = (await res.text()).slice(0, 200);
+      if (i === attempts) {
+        fail(`friendbot funding failed after ${attempts} attempts (${res.status}): ${body}`);
+      }
+      log(`friendbot ${res.status} — retrying in ${i * 2}s`);
+      await sleep(i * 2000);
     }
-    const account = await sdk.rpc.getAccount(pub);
-    log(`funded: ${pub} (seq ${account.sequenceNumber()})`);
-    return account;
   }
 }
 
