@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Settings, User, Bell, Shield, Palette, LogOut } from 'lucide-react';
+import { Settings, User, Bell, Shield, Palette, LogOut, Wallet } from 'lucide-react';
+import WalletBadge from '@/components/wallet/WalletBadge';
 import { useAuthStore } from '@/store/authStore';
 import { authAPI } from '@/lib/api';
 import { AnimatedPage, FadeIn } from '@/components/animations/MotionComponents';
@@ -11,6 +13,7 @@ import toast from 'react-hot-toast';
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
+  { id: 'wallet', label: 'Wallet', icon: Wallet },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'privacy', label: 'Privacy', icon: Shield },
   { id: 'appearance', label: 'Appearance', icon: Palette },
@@ -144,6 +147,41 @@ export default function SettingsPage() {
                   {saving ? 'Saving...' : 'Save Changes'}
                 </motion.button>
               </form>
+            </motion.div>
+          )}
+
+          {activeTab === 'wallet' && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-6"
+            >
+              <h2 className="text-xl font-semibold mb-2">Connected Wallet</h2>
+              <p className="text-dark-400 text-sm mb-6">
+                {user?.stellarPublicKey
+                  ? 'Your Stellar wallet is linked to this account. Signing transactions uses this wallet.'
+                  : 'No Stellar wallet linked. Sign in with Freighter on the login page to connect one.'}
+              </p>
+              {user?.stellarPublicKey ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <WalletBadge address={user.stellarPublicKey} full className="flex-1" />
+                  <button
+                    onClick={logout}
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/40 transition-all active:scale-[0.98]"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Disconnect Wallet
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-primary-300 hover:bg-primary-500/10 border border-primary-500/20 hover:border-primary-500/40 transition-all"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Connect a wallet
+                </Link>
+              )}
             </motion.div>
           )}
 

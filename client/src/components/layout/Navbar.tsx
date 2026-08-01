@@ -7,8 +7,8 @@ import { LayoutDashboard, Target, ListTodo, Users, MessageSquare, Trophy, Bot, M
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
-import { useThemeStore } from '@/store/themeStore';
 import { ThemeToggleButton } from '@/components/ui/ThemeToggle';
+import WalletBadge from '@/components/wallet/WalletBadge';
 
 const mobileNavItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Home' },
@@ -22,7 +22,7 @@ const mobileNavItems = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -103,13 +103,21 @@ export default function Navbar() {
             className="absolute right-0 top-0 bottom-0 w-72 bg-dark-800 border-l border-dark-700 p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-4">
               <img src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username}&background=6366f1&color=fff`} alt="" className="w-12 h-12 rounded-full" />
               <div>
                 <p className="font-medium">{user?.displayName}</p>
                 <p className="text-sm text-dark-400">@{user?.username}</p>
               </div>
             </div>
+            {user?.stellarPublicKey && (
+              <WalletBadge
+                address={user.stellarPublicKey}
+                showDisconnect
+                onDisconnect={logout}
+                className="mb-6"
+              />
+            )}
             <div className="space-y-2">
               {mobileNavItems.map((item) => {
                 const Icon = item.icon;

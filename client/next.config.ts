@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@stakemind/sdk'],
   output: process.env.NEXT_STATIC_EXPORT === 'true' ? 'export' : undefined,
   images: {
     unoptimized: process.env.NEXT_STATIC_EXPORT === 'true',

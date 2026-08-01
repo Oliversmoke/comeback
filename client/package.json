@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
     "mobile:build": "next build && npx cap copy",
     "mobile:sync": "npx cap sync",
     "mobile:open:ios": "npx cap open ios",
@@ -21,6 +22,7 @@
     "@capacitor/ios": "^8.4.0",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@stakemind/sdk": "file:../packages/sdk",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -45,6 +47,7 @@
     "eslint-config-next": "^15.2.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.9",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.10"
   }
 }

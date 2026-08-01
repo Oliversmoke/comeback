@@ -9,6 +9,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { cn, calculateXpProgress } from '@/lib/utils';
 import { ThemeToggleButton } from '@/components/ui/ThemeToggle';
+import WalletBadge from '@/components/wallet/WalletBadge';
 
 interface NavItem {
   href: string;
@@ -126,6 +127,14 @@ export default function Sidebar() {
           <div className="flex items-center gap-2 mt-3 text-xs text-dark-400">
             <span>🔥 {user?.streak || 0} day streak</span>
           </div>
+          {user?.stellarPublicKey && (
+            <WalletBadge
+              address={user.stellarPublicKey}
+              showDisconnect
+              onDisconnect={logout}
+              className="mt-3"
+            />
+          )}
         </div>
       </div>
     </aside>
