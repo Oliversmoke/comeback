@@ -1,4 +1,4 @@
-# StakeMind — Project Issues (400)
+# StakeMind — Project Issues (401)
 
 > Auto-generated from the Stellar Wave Builder Phase 10 playbook.
 > Format: `[TYPE] [PRIORITY] Title` — Summary — Acceptance Criteria
@@ -879,6 +879,12 @@
 
 ---
 
+## Repository & Cleanup (#401)
+
+401. **[chore] [P1] Complete rickchat de-branding** — Remove remaining legacy `com.rickchat` package names, root `package.json` name (`productivity-social-client`), `server-go` and Kotlin microservice remnants, and any leftover "rickchat"/"Comeback AI" branding across the repo. — Grep for rickchat/com.rickchat/productivity-social-client, rename to StakeMind, verify zero remnants, close GitHub issue #6.
+
+---
+
 ## Summary
 
 | Category | Issues | Priority |
@@ -895,7 +901,8 @@
 | Performance | #361–#380 | 20 |
 | Mobile/Desktop | #381–#395 | 15 |
 | Community | #396–#400 | 5 |
-| **Total** | **#1–#400** | **400** |
+| Repository & Cleanup | #401 | 1 |
+| **Total** | **#1–#401** | **401** |
 
 ---
 
