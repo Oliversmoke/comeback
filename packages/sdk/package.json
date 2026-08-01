@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test"
+    "test": "npm run build && node --test",
+    "smoke:stake": "npm run build && node scripts/smoke-test-stake.mjs"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^13.0.0"

@@ -11,6 +11,7 @@
     "contracts:build": "cd comeback-contract && cargo build --target wasm32-unknown-unknown --release",
     "contracts:test": "cd comeback-contract && cargo test",
     "sdk:build": "cd packages/sdk && npm run build",
+    "smoke:stake": "cd packages/sdk && npm run smoke:stake",
     "indexer:start": "cd indexer && npm start"
   },
   "devDependencies": {

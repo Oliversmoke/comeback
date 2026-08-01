@@ -13,7 +13,7 @@ export const TESTNET_PASSPHRASE = 'Test SDF Network ; September 2015';
  * native asset). Override with NEXT_PUBLIC_STAKING_TOKEN when staking a
  * different asset (e.g. USDC).
  */
-export const TESTNET_XLM_TOKEN = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2UGCQMYP';
+export const TESTNET_XLM_TOKEN = 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
 
 const DEFAULT_RPC = 'https://soroban-testnet.stellar.org';
 const DEFAULT_HORIZON = 'https://horizon-testnet.stellar.org';

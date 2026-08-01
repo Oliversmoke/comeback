@@ -309,7 +309,10 @@ export class StakeMindSDK {
     const tx = TransactionBuilder.fromXDR(signedXdrBase64, this.config.networkPassphrase);
     const sendResponse = await server.sendTransaction(tx);
     if (sendResponse.status === 'ERROR') {
-      throw new Error(`Transaction failed to send: ${sendResponse.errorResult?.result?.toString() ?? 'unknown error'}`);
+      // result() is a method on TransactionResult; calling it yields the
+      // union whose switch() names the failure (e.g. txBadSeq).
+      const code = sendResponse.errorResult?.result?.()?.switch?.()?.name;
+      throw new Error(`Transaction failed to send: ${code ?? 'unknown error'}`);
     }
 
     const hash = sendResponse.hash;
@@ -317,18 +320,16 @@ export class StakeMindSDK {
     const pollMs = opts.pollMs ?? 2_000;
     const deadline = Date.now() + timeoutMs;
 
+    // Poll via raw JSON-RPC: the SDK's typed `getTransaction` parser throws
+    // `Bad union switch: 4` on PENDING responses (it decodes resultMetaXdr
+    // before the tx settles). Raw polling handles PENDING/NOT_FOUND cleanly.
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      const result = await server.getTransaction(hash);
-      if (result.status === 'SUCCESS') {
-        const retval = (result as any).returnValue;
-        return {
-          hash,
-          status: 'SUCCESS',
-          result: retval ? scValToNative(retval) : undefined,
-        };
+      const raw = await this.rpcGetTransaction(hash);
+      if (raw.status === 'SUCCESS') {
+        return { hash, status: 'SUCCESS', result: this.decodeReturnValue(raw) };
       }
-      if (result.status === 'FAILED') {
+      if (raw.status === 'FAILED') {
         throw new Error(`Transaction failed on chain (${hash})`);
       }
       if (Date.now() > deadline) {
@@ -338,7 +339,54 @@ export class StakeMindSDK {
     }
   }
 
-  /** Read-only contract call: simulate an invocation and return the decoded result. */
+  /** Raw JSON-RPC getTransaction (avoids the SDK parser's PENDING crash). */
+  private async rpcGetTransaction(hash: string): Promise<Record<string, unknown>> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const res = await fetch(this.config.rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'getTransaction', params: { hash } }),
+        signal: controller.signal,
+      });
+      const body = (await res.json()) as { error?: unknown; result?: Record<string, unknown> };
+      if (body.error) {
+        throw new Error(`getTransaction RPC error: ${JSON.stringify(body.error)}`);
+      }
+      return body.result ?? {};
+    } catch (err) {
+      // A slow/hung poll (or abort) is transient — report PENDING so the
+      // caller's deadline logic decides whether to keep waiting.
+      if ((err as Error).name === 'AbortError' || (err as any)?.message?.includes('fetch failed')) {
+        return { status: 'PENDING' };
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /** Decode a Soroban return value from a raw getTransaction result. */
+  private decodeReturnValue(raw: Record<string, unknown>): unknown {
+    try {
+      if (!raw.resultMetaXdr) return undefined;
+      const meta = xdr.TransactionMeta.fromXDR(raw.resultMetaXdr as string, 'base64');
+      if (meta.switch() !== 3) return undefined; // only v3 carries Soroban meta
+      const sorobanMeta = meta.v3().sorobanMeta();
+      if (!sorobanMeta) return undefined;
+      const retval = sorobanMeta.returnValue();
+      return retval ? scValToNative(retval) : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Read-only contract call: simulate an invocation and return the raw ScVal
+   * result. Typed readers (readStake/readPool/readReceipt) decode it via the
+   * decode* helpers.
+   */
   async readContract(
     contractId: string,
     method: string,
@@ -374,7 +422,9 @@ export class StakeMindSDK {
     if (retval === undefined) {
       throw new Error(`Contract call ${method} failed to simulate`);
     }
-    return scValToNative(retval);
+    // Return the raw ScVal; typed readers (readStake/readPool/readReceipt)
+    // decode it once via their decode* helpers.
+    return retval;
   }
 
   /** get_stake(goal_id). */
