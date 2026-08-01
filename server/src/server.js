@@ -19,6 +19,7 @@ import { configureSocket } from './socket/index.js';
 import { initializeAI } from './services/ai/providers.js';
 
 import authRoutes from './routes/auth.js';
+import stellarAuthRoutes from './routes/stellarAuth.js';
 import goalRoutes from './routes/goals.js';
 import groupRoutes from './routes/groups.js';
 import taskRoutes from './routes/tasks.js';
@@ -102,6 +103,7 @@ app.get('/health', (req, res) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth/stellar', stellarAuthRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/tasks', taskRoutes);

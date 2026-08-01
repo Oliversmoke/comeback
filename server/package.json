@@ -11,6 +11,7 @@
     "lint": "eslint src/"
   },
   "dependencies": {
+    "@stellar/stellar-sdk": "^16.2.0",
     "axios": "^1.17.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.10.0",
